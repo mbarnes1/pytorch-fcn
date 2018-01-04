@@ -243,7 +243,7 @@ class Trainer(object):
             #loss = cross_entropy2d(score, target,
             #                       size_average=self.size_average)
             loss = self.frobenius_loss.loss(score, target)
-            loss /= len(data)
+            loss = loss / len(data)
 
             if np.isnan(float(loss.data[0])):
                 raise ValueError('loss is nan while training')
