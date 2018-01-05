@@ -4,14 +4,13 @@ import argparse
 import datetime
 import os
 import os.path as osp
+import pytz
 import shlex
 import subprocess
-
-import pytz
+from tensorboardX import SummaryWriter
 import torch
-import yaml
-
 import torchfcn
+import yaml
 
 
 configurations = {
@@ -145,6 +144,8 @@ def main():
     if resume:
         optim.load_state_dict(checkpoint['optim_state_dict'])
 
+    tensorboard_writer = SummaryWriter(log_dir=out, comment='')
+
     trainer = torchfcn.Trainer(
         cuda=cuda,
         model=model,
@@ -153,7 +154,9 @@ def main():
         val_loader=val_loader,
         out=out,
         max_iter=cfg['max_iteration'],
-        interval_validate=cfg.get('interval_validate', len(train_loader)),
+        interval_validate=1,  #cfg.get('interval_validate', len(train_loader)),
+        tensorboard_writer=tensorboard_writer,
+        interval_train_loss=1
     )
     trainer.epoch = start_epoch
     trainer.iteration = start_iteration

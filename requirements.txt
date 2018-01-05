@@ -1,6 +1,10 @@
 fcn>=6.1.5
 numpy
 Pillow
+pytz
 scipy
+tensorboardX
+torch
 torchvision>=0.1.8
 tqdm
+yaml

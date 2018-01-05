@@ -92,25 +92,38 @@ class Trainer(object):
 
     def __init__(self, cuda, model, optimizer,
                  train_loader, val_loader, out, max_iter,
-                 size_average=False, interval_validate=None):
+                 size_average=False, interval_validate=None, tensorboard_writer=None, interval_train_loss=10):
+        """
+        :param cuda:
+        :param model:
+        :param optimizer:
+        :param train_loader:
+        :param val_loader:
+        :param out:
+        :param max_iter:
+        :param size_average:
+        :param interval_validate: Validate, print and write to tensorboard every this many iterations.
+        :param tensorboard_writer: TensorboardX SummaryWriter object
+        :param interval_train_loss: Print train loss to Tensorboard every this many iterations.
+        """
         self.cuda = cuda
-
         self.model = model
+        self.out = out
         self.optim = optimizer
-
         self.train_loader = train_loader
         self.val_loader = val_loader
-
-        self.timestamp_start = \
-            datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
+        self.max_iter = max_iter
         self.size_average = size_average
-
         if interval_validate is None:
             self.interval_validate = len(self.train_loader)
         else:
             self.interval_validate = interval_validate
+        self._tensorboard_writer = tensorboard_writer
+        self._interval_train_loss = interval_train_loss
 
-        self.out = out
+        self.timestamp_start = \
+            datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
+
         if not osp.exists(self.out):
             os.makedirs(self.out)
 
@@ -135,12 +148,15 @@ class Trainer(object):
 
         self.epoch = 0
         self.iteration = 0
-        self.max_iter = max_iter
         self.best_mean_iu = 0
 
         self.frobenius_loss = FrobeniusLoss(1000)
 
     def validate(self):
+        """
+        Writes a bunch of metrics to the log file.
+        :return val_loss: The validation loss.
+        """
         training = self.model.training
         self.model.eval()
 
@@ -215,6 +231,7 @@ class Trainer(object):
 
         if training:
             self.model.train()
+        return val_loss
 
     def train_epoch(self):
         self.model.train()
@@ -230,7 +247,7 @@ class Trainer(object):
             self.iteration = iteration
 
             if self.iteration % self.interval_validate == 0:
-                self.validate()
+                val_loss = self.validate()
 
             assert self.model.training
 
@@ -268,6 +285,15 @@ class Trainer(object):
                     metrics.tolist() + [''] * 5 + [elapsed_time]
                 log = map(str, log)
                 f.write(','.join(log) + '\n')
+
+            # Write results to Tensorboard
+            # TODO: Refactor such that validation and writing to tensorboard happen in the same if statement.
+            if self._tensorboard_writer is not None:
+                if self.iteration % self._interval_train_loss == 0:
+                    # TODO: If this has too much variance, print the cumulative train loss since last print
+                    self._tensorboard_writer.add_scalar('loss/train', loss.data[0], self.iteration)
+                if self.iteration % self.interval_validate == 0:
+                    self._tensorboard_writer.add_scalar('loss/validation', val_loss, self.iteration)
 
             if self.iteration >= self.max_iter:
                 break
