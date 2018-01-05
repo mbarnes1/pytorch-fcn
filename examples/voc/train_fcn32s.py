@@ -34,15 +34,17 @@ def git_hash():
 
 def get_log_dir(model_name, config_id, cfg):
     # load config
-    name = 'MODEL-%s_CFG-%03d' % (model_name, config_id)
-    for k, v in cfg.items():
-        v = str(v)
-        if '/' in v:
-            continue
-        name += '_%s-%s' % (k.upper(), v)
-    now = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
+    name = '000-spectral_semantic'
+    #name = 'MODEL-%s_CFG-%03d' % (model_name, config_id)
+    #for k, v in cfg.items():
+    #    v = str(v)
+    #    if '/' in v:
+    #        continue
+    #    name += '_%s-%s' % (k.upper(), v)
+    #now = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
     name += '_VCS-%s' % git_hash()
-    name += '_TIME-%s' % now.strftime('%Y%m%d-%H%M%S')
+    #name += '_TIME-%s' % now.strftime('%Y%m%d-%H%M%S')
+
     # create out
     log_dir = osp.join(here, 'logs', name)
     if not osp.exists(log_dir):
