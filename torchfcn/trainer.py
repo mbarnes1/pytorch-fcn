@@ -45,7 +45,7 @@ class FrobeniusLoss(object):
         target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
         input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
         target_adjacency = labels_to_adjacency(target_subsample.view(n, -1))
-        loss = torch.norm(input_adjacency - target_adjacency, p=2)  # Frobenius norm
+        loss = torch.norm(input_adjacency - target_adjacency, p=2) / (self._n_nodes ** 2)  # Frobenius norm per edge
         return loss
 
         # TODO Other random sample strategies: Choose random edges
@@ -174,12 +174,12 @@ class Trainer(object):
             data, target = Variable(data, volatile=True), Variable(target)
             score = self.model(data)
 
-            #loss = cross_entropy2d(score, target,
-            #                       size_average=self.size_average)
-            loss = self.frobenius_loss.loss(score, target)
+            loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
+            loss_frobenius = self.frobenius_loss.loss(score, target)
 
-            if np.isnan(float(loss.data[0])):
+            if np.isnan(float(loss_crossentropy.data[0])) or np.isnan(loss_frobenius):
                 raise ValueError('loss is nan while validating')
+
             val_loss += float(loss.data[0]) / len(data)
 
             imgs = data.data.cpu()
