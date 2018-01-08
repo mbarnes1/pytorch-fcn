@@ -1,35 +1,37 @@
 import datetime
+import fcn
 import math
+import numpy as np
 import os
 import os.path as osp
-import shutil
-
-import fcn
-import numpy as np
 import pytz
 import random
 import scipy.misc
+import shutil
 import torch
 from torch.autograd import Variable
+import torch.nn as nn
 import torch.nn.functional as F
+import torchfcn
 import tqdm
 
-import torchfcn
 
-
-class FrobeniusLoss(object):
+class MSEAdjacencyLoss(nn.Module):
     """
-    An unbiased estimator of the Frobenius norm between the true and predicted graph adjacency matrices.
+    An unbiased estimator of the mean squared error between the true and predicted graph adjacency matrices.
+    Loss is computed per edge.
     """
     def __init__(self, n_nodes):
         """
         :param n_nodes: Number of random nodes to sample from the graph.
         """
+        super(MSEAdjacencyLoss, self).__init__()
         self._n_nodes = n_nodes
+        self._mse = torch.nn.MSELoss()
 
-    def loss(self, input, target):
+    def forward(self, input, target):
         """
-        Compute an unbiased estimate of the Frobenius norm by randomly selecting nodes from the graph adjacency matrices.
+        Compute an unbiased estimate of the MSE by randomly selecting nodes from the graph adjacency matrices.
         :param input: N x C x H x W Float Variable. Predicted eigenvectors, i.e. the embedding for every pixel.
         :param target: N x H x W Long Variable. Instance labels for every channel
         :return loss:
@@ -45,7 +47,10 @@ class FrobeniusLoss(object):
         target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
         input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
         target_adjacency = labels_to_adjacency(target_subsample.view(n, -1))
-        loss = torch.norm(input_adjacency - target_adjacency, p=2) / (self._n_nodes ** 2)  # Frobenius norm per edge
+        #off_diagonal_mask = ~torch.eye(self._n_nodes).byte().unsqueeze(dim=0).expand(n, -1, -1)
+        #loss = self._mse(input_adjacency[off_diagonal_mask], target_adjacency[off_diagonal_mask])  # MSE per edge, excluding self edges
+        #loss = torch.norm(input_adjacency - target_adjacency, p=2) / (self._n_nodes ** 2)  # Frobenius norm per edge
+        loss = self._mse(input_adjacency, target_adjacency)  # MSE per edge
         return loss
 
         # TODO Other random sample strategies: Choose random edges
@@ -150,7 +155,7 @@ class Trainer(object):
         self.iteration = 0
         self.best_mean_iu = 0
 
-        self.frobenius_loss = FrobeniusLoss(1000)
+        self.frobenius_loss = MSEAdjacencyLoss(1000)
 
     def validate(self):
         """

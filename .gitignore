@@ -6,3 +6,9 @@ dist/
 
 # PyCharm files
 .idea/
+
+# IPython files
+.ipynb_checkpoints/
+
+# OSX files
+.DS_Store
