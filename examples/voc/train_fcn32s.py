@@ -4,7 +4,7 @@ import argparse
 import datetime
 import os
 import os.path as osp
-import pytz
+import socket
 import shlex
 import subprocess
 from tensorboardX import SummaryWriter
@@ -34,7 +34,7 @@ def git_hash():
 
 def get_log_dir(model_name, config_id, cfg):
     # load config
-    name = '002-xe'
+    name = '002-xe_'
     #name = 'MODEL-%s_CFG-%03d' % (model_name, config_id)
     #for k, v in cfg.items():
     #    v = str(v)
@@ -42,6 +42,7 @@ def get_log_dir(model_name, config_id, cfg):
     #        continue
     #    name += '_%s-%s' % (k.upper(), v)
     #now = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
+    name += datetime.now().strftime('%b%d_%H-%M-%S')
     name += '_VCS-%s' % git_hash()
     #name += '_TIME-%s' % now.strftime('%Y%m%d-%H%M%S')
 
@@ -158,7 +159,7 @@ def main():
         max_iter=cfg['max_iteration'],
         interval_validate=cfg.get('interval_validate', len(train_loader)),
         tensorboard_writer=tensorboard_writer,
-        interval_train_loss=1
+        interval_train_loss=100
     )
     trainer.epoch = start_epoch
     trainer.iteration = start_iteration
