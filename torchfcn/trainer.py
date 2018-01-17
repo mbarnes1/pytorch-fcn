@@ -140,7 +140,8 @@ class Trainer(object):
             'train/acc_cls',
             'train/mean_iu',
             'train/fwavacc',
-            'valid/loss',
+            'valid/loss_crossentropy',
+            'valid/loss_mse',
             'valid/acc',
             'valid/acc_cls',
             'valid/mean_iu',
@@ -155,19 +156,20 @@ class Trainer(object):
         self.iteration = 0
         self.best_mean_iu = 0
 
-        self.frobenius_loss = MSEAdjacencyLoss(1000)
+        self.mse_loss = MSEAdjacencyLoss(1000)
 
     def validate(self):
         """
         Writes a bunch of metrics to the log file.
-        :return val_loss: The validation loss.
+        :return val_loss_crossentropy: The validation cross-entropy loss.
+        :return val_loss_mse: The validation MSE loss.
         """
         training = self.model.training
         self.model.eval()
 
         n_class = len(self.val_loader.dataset.class_names)
 
-        val_loss = 0
+        val_loss_crossentropy = val_loss_mse = 0
         visualizations = []
         label_trues, label_preds = [], []
         for batch_idx, (data, target) in tqdm.tqdm(
@@ -180,12 +182,13 @@ class Trainer(object):
             score = self.model(data)
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
-            loss_frobenius = self.frobenius_loss.loss(score, target)
+            loss_mse = self.mse_loss.loss(score, target)
 
-            if np.isnan(float(loss_crossentropy.data[0])) or np.isnan(loss_frobenius):
+            if np.isnan(float(loss_crossentropy.data[0])) or np.isnan(loss_mse):
                 raise ValueError('loss is nan while validating')
 
-            val_loss += float(loss.data[0]) / len(data)
+            val_loss_crossentropy += float(loss_crossentropy.data[0]) / len(data)
+            val_loss_mse += float(loss_mse.data[0]) / len(data)
 
             imgs = data.data.cpu()
             lbl_pred = score.data.max(1)[1].cpu().numpy()[:, :, :]
@@ -207,14 +210,15 @@ class Trainer(object):
         out_file = osp.join(out, 'iter%012d.jpg' % self.iteration)
         scipy.misc.imsave(out_file, fcn.utils.get_tile_image(visualizations))
 
-        val_loss /= len(self.val_loader)
+        val_loss_crossentropy /= len(self.val_loader)
+        val_loss_mse /= len(self.val_loader)
 
         with open(osp.join(self.out, 'log.csv'), 'a') as f:
             elapsed_time = (
                 datetime.datetime.now(pytz.timezone('Asia/Tokyo')) -
                 self.timestamp_start).total_seconds()
             log = [self.epoch, self.iteration] + [''] * 5 + \
-                  [val_loss] + list(metrics) + [elapsed_time]
+                  [val_loss_crossentropy] + [val_loss_mse] + list(metrics) + [elapsed_time]
             log = map(str, log)
             f.write(','.join(log) + '\n')
 
@@ -236,7 +240,7 @@ class Trainer(object):
 
         if training:
             self.model.train()
-        return val_loss
+        return val_loss_crossentropy, val_loss_mse
 
     def train_epoch(self):
         self.model.train()
@@ -252,7 +256,7 @@ class Trainer(object):
             self.iteration = iteration
 
             if self.iteration % self.interval_validate == 0:
-                val_loss = self.validate()
+                val_loss_crossentropy, val_loss_mse = self.validate()
 
             assert self.model.training
 
@@ -262,10 +266,9 @@ class Trainer(object):
             self.optim.zero_grad()
             score = self.model(data)
 
-            #loss = cross_entropy2d(score, target,
-            #                       size_average=self.size_average)
-            loss = self.frobenius_loss.loss(score, target)
-            loss = loss / len(data)
+            loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
+            loss_mse = self.mse_loss.loss(score, target) / len(data)
+            loss = loss_crossentropy
 
             if np.isnan(float(loss.data[0])):
                 raise ValueError('loss is nan while training')
@@ -286,8 +289,8 @@ class Trainer(object):
                 elapsed_time = (
                     datetime.datetime.now(pytz.timezone('Asia/Tokyo')) -
                     self.timestamp_start).total_seconds()
-                log = [self.epoch, self.iteration] + [loss.data[0]] + \
-                    metrics.tolist() + [''] * 5 + [elapsed_time]
+                log = [self.epoch, self.iteration] + [loss_crossentropy.data[0]] + [loss_mse.data[0]] + \
+                       metrics.tolist() + [''] * 5 + [elapsed_time]
                 log = map(str, log)
                 f.write(','.join(log) + '\n')
 
@@ -296,9 +299,11 @@ class Trainer(object):
             if self._tensorboard_writer is not None:
                 if self.iteration % self._interval_train_loss == 0:
                     # TODO: If this has too much variance, print the cumulative train loss since last print
-                    self._tensorboard_writer.add_scalar('loss/train', loss.data[0], self.iteration)
+                    self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
+                    self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
                 if self.iteration % self.interval_validate == 0:
-                    self._tensorboard_writer.add_scalar('loss/validation', val_loss, self.iteration)
+                    self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
+                    self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
 
             if self.iteration >= self.max_iter:
                 break

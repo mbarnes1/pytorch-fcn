@@ -34,7 +34,7 @@ def git_hash():
 
 def get_log_dir(model_name, config_id, cfg):
     # load config
-    name = '000-spectral_semantic'
+    name = '002-xe-pretrained'
     #name = 'MODEL-%s_CFG-%03d' % (model_name, config_id)
     #for k, v in cfg.items():
     #    v = str(v)
