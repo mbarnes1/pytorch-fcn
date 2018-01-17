@@ -156,7 +156,7 @@ class Trainer(object):
         self.iteration = 0
         self.best_mean_iu = 0
 
-        self.mse_loss = MSEAdjacencyLoss(1000)
+        self.mse_loss = MSEAdjacencyLoss(5000)
 
     def validate(self):
         """
