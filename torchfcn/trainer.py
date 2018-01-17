@@ -273,7 +273,7 @@ class Trainer(object):
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
             loss_mse = self.mse_loss(score_softmax, target) / len(data)
-            loss = loss_crossentropy
+            loss = loss_mse
 
             if np.isnan(float(loss.data[0])):
                 raise ValueError('loss is nan while training')
