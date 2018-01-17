@@ -39,8 +39,11 @@ class MSEAdjacencyLoss(nn.Module):
         # Randomly sample nodes
         n, c, h, w = input.size()
         total_nodes_per_image = c * h
-        assert total_nodes_per_image >= self._n_nodes
-        random_indices = Variable(target.data.new(random.sample(xrange(total_nodes_per_image), self._n_nodes * n)).view(n, self._n_nodes))  # n x n_nodes
+        if total_nodes_per_image >= self._n_nodes:
+            n_nodes_this_iter = self._n_nodes
+        else:
+            n_nodes_this_iter = total_nodes_per_image
+        random_indices = Variable(target.data.new(random.sample(xrange(total_nodes_per_image), n_nodes_this_iter * n)).view(n, n_nodes_this_iter))  # n x n_nodes
 
         # Compute loss
         input_subsample = torch.gather(input.view(n, c, -1), 2, random_indices.unsqueeze(dim=1).expand(-1, c, -1))  # N x C x n_nodes
