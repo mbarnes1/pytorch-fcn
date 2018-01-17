@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import datetime
+from datetime import datetime
 import os
 import os.path as osp
 import socket
