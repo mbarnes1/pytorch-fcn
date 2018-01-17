@@ -156,7 +156,7 @@ def main():
         val_loader=val_loader,
         out=out,
         max_iter=cfg['max_iteration'],
-        interval_validate=1,  #cfg.get('interval_validate', len(train_loader)),
+        interval_validate=cfg.get('interval_validate', len(train_loader)),
         tensorboard_writer=tensorboard_writer,
         interval_train_loss=1
     )
