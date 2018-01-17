@@ -18,7 +18,7 @@ configurations = {
     # https://github.com/shelhamer/fcn.berkeleyvision.org
     1: dict(
         max_iteration=100000,
-        lr=1.0e-8,
+        lr=1.0e-3,
         momentum=0.99,
         weight_decay=0.0005,
         interval_validate=4000,
@@ -34,7 +34,7 @@ def git_hash():
 
 def get_log_dir(model_name, config_id, cfg):
     # load config
-    name = '003-mse_lr1e-8_5000edges_nosoftmax'
+    name = '005-mse_lr1e-3_5000edges_nosoftmax'
     #name = 'MODEL-%s_CFG-%03d' % (model_name, config_id)
     #for k, v in cfg.items():
     #    v = str(v)
@@ -135,7 +135,7 @@ def main():
         model = model.cuda()
 
     # 3. optimizer
-
+    print 'Learning rate: {}'.format(cfg['lr'])
     optim = torch.optim.SGD(
         [
             {'params': get_parameters(model, bias=False)},
