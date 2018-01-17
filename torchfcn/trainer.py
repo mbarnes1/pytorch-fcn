@@ -182,9 +182,10 @@ class Trainer(object):
                 data, target = data.cuda(), target.cuda()
             data, target = Variable(data, volatile=True), Variable(target)
             score = self.model(data)
+            score_softmax = F.softmax(score, dim=1)
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
-            loss_mse = self.mse_loss(score, target)
+            loss_mse = self.mse_loss(score_softmax, target)
 
             if np.isnan(float(loss_crossentropy.data[0])) or np.isnan(float(loss_mse.data[0])):
                 raise ValueError('loss is nan while validating')
@@ -268,9 +269,10 @@ class Trainer(object):
             data, target = Variable(data), Variable(target)
             self.optim.zero_grad()
             score = self.model(data)
+            score_softmax = F.softmax(score, dim=1)
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
-            loss_mse = self.mse_loss(score, target) / len(data)
+            loss_mse = self.mse_loss(score_softmax, target) / len(data)
             loss = loss_crossentropy
 
             if np.isnan(float(loss.data[0])):
