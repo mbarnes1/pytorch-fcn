@@ -315,8 +315,8 @@ class Trainer(object):
                 elapsed_time = (
                     datetime.datetime.now(pytz.timezone('Asia/Tokyo')) -
                     self.timestamp_start).total_seconds()
-                log = [self.epoch, self.iteration] + [loss_crossentropy.data[0]] + [loss_mse.data[0]] + \
-                       metrics.tolist() + [''] * 5 + [elapsed_time]
+                log = [self.epoch, self.iteration] + [loss_crossentropy.data[0]] + \
+                       metrics.tolist() + [''] * 5 + [elapsed_time]  # [loss_mse.data[0]] + \ (in above line)
                 log = map(str, log)
                 f.write(','.join(log) + '\n')
 
@@ -326,7 +326,7 @@ class Trainer(object):
                 if self.iteration % self._interval_train_loss == 0:
                     # TODO: If this has too much variance, print the cumulative train loss since last print
                     self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
-                    self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
+                    #self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
                 # if self.iteration % self.interval_validate == 0:
                 #     self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
                 #     self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
