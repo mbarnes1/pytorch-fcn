@@ -268,8 +268,8 @@ class Trainer(object):
                 continue  # for resuming
             self.iteration = iteration
 
-            if self.iteration % self.interval_validate == 0:
-                val_loss_crossentropy, val_loss_mse, val_acc, val_iu = self.validate()
+            #if self.iteration % self.interval_validate == 0:
+            #    val_loss_crossentropy, val_loss_mse, val_acc, val_iu = self.validate()
 
             assert self.model.training
 

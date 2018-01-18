@@ -39,7 +39,9 @@ def normalize_unit(scores, dim=1):
     :return normalized_scores: Tensor with same shape as scores, with all vectors along dimension having unit l2 norm.
     """
     l2_norms = torch.norm(scores, 2, dim, keepdim=True)
-    assert (l2_norms > 0).all()
+    if not (l2_norms > 0).all():
+        print l2_norms
+        raise ValueError('All l2 norms must be greater than 0.')
     normalized_scores = scores / l2_norms
     assert ~np.isnan(normalized_scores.data.cpu().numpy()).any()
     return normalized_scores
