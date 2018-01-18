@@ -93,7 +93,7 @@ class FCN32s(nn.Module):
         self.upscore = nn.ConvTranspose2d(n_class, n_class, 64, stride=32,
                                           bias=False)
 
-        self._initialize_weights()
+        #self._initialize_weights()
 
     def _initialize_weights(self):
         for m in self.modules():
