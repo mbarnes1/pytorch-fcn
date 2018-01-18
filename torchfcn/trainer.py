@@ -191,10 +191,9 @@ class Trainer(object):
             score_unit = normalize_unit(score, dim=1)
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
-            loss_mse = self.mse_loss.forward(score_unit, target)
+            loss_mse = self.mse_loss.forward(score, target)
 
-            print 'Cross entropy loss {}'.format(loss_crossentropy.data[0])
-            print 'MSE loss {}'.format(loss_mse.data[0])
+
             if np.isnan(float(loss_crossentropy.data[0])):
                 raise ValueError('Cross entropy loss is nan while validating')
             if np.isnan(float(loss_mse.data[0])):
@@ -283,7 +282,7 @@ class Trainer(object):
             score_unit = normalize_unit(score, dim=1)
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
-            loss_mse = self.mse_loss.forward(score_unit, target) / len(data)
+            loss_mse = self.mse_loss.forward(score, target) / len(data)
             loss = loss_mse
 
             if np.isnan(float(loss.data[0])):

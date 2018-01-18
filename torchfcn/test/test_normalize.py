@@ -31,3 +31,7 @@ class MyTestCase(unittest.TestCase):
         x_unit[:, :, 2] = 1.0
         x_renormalized = normalize_unit(x_unit, dim=2)
         np.testing.assert_array_almost_equal(x_unit.data.numpy(), x_renormalized.data.numpy())
+
+    def test_normalize_assertions(self):
+        x = Variable(torch.zeros(2, 5, 10).float())
+        self.assertRaises(AssertionError, normalize_unit, x)
