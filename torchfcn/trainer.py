@@ -204,7 +204,7 @@ class Trainer(object):
             #    raise ValueError('MSE loss is nan while validating')
 
             val_loss_crossentropy += float(loss_crossentropy.data[0]) / len(data)
-            val_loss_mse += float(loss_mse.data[0]) / len(data)
+            #val_loss_mse += float(loss_mse.data[0]) / len(data)
 
             imgs = data.data.cpu()
             lbl_pred = score.data.max(1)[1].cpu().numpy()[:, :, :]
