@@ -43,15 +43,11 @@ class MSEAdjacencyLoss(nn.Module):
             n_nodes_this_iter = self._n_nodes
         else:
             n_nodes_this_iter = total_nodes_per_image
-        #random_indices = Variable(target.data.new(random.sample(xrange(total_nodes_per_image), n_nodes_this_iter * n)).view(n, n_nodes_this_iter))  # n x n_nodes
+        random_indices = Variable(target.data.new(random.sample(xrange(total_nodes_per_image), n_nodes_this_iter * n)).view(n, n_nodes_this_iter))  # n x n_nodes
 
         # Compute loss
-        #input_subsample = torch.gather(input.view(n, c, -1), 2, random_indices.unsqueeze(dim=1).expand(-1, c, -1))  # N x C x n_nodes
-        #target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
-
-        # Use all nodes
-        input_subsample = input.view(n, c, -1)  # N X C X n_nodes
-        target_subsample = target.view(n, -1)  # N X n_nodes
+        input_subsample = torch.gather(input.view(n, c, -1), 2, random_indices.unsqueeze(dim=1).expand(-1, c, -1))  # N x C x n_nodes
+        target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
 
         input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
         target_adjacency = labels_to_adjacency(target_subsample.view(n, -1))
