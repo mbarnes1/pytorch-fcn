@@ -272,8 +272,8 @@ class Trainer(object):
                 continue  # for resuming
             self.iteration = iteration
 
-            #if self.iteration % self.interval_validate == 0:
-            #    val_loss_crossentropy, val_loss_mse, val_acc, val_iu = self.validate()
+            if self.iteration % self.interval_validate == 0:
+                val_loss_crossentropy, val_loss_mse, val_acc, val_iu = self.validate()
 
             assert self.model.training
 
@@ -282,19 +282,20 @@ class Trainer(object):
             data, target = Variable(data), Variable(target)
             self.optim.zero_grad()
             score = self.model(data)
+            loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
+            if np.isnan(float(loss_crossentropy.data[0])):
+                raise ValueError('Cross entropy loss is nan while training')
+
             if np.isnan(score.data.cpu()).any():
                 print score
                 raise ValueError('Scores are NaN')
-            
+
             score_softmax = F.softmax(score, dim=1)
             score_unit = normalize_unit(score, dim=1)
 
-            loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
             loss_mse = self.mse_loss.forward(score, target) / len(data)
             loss = loss_mse
 
-            if np.isnan(float(loss_crossentropy.data[0])):
-                raise ValueError('Cross entropy loss is nan while training')
             if np.isnan(float(loss_mse.data[0])):
                 raise ValueError('MSE loss is nan while training')
             loss.backward()
