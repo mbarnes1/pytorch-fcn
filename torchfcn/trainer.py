@@ -190,11 +190,14 @@ class Trainer(object):
             #score_softmax = F.softmax(score, dim=1)
             score_unit = normalize_unit(score, dim=1)
 
+            if np.isnan(score.data.cpu()).any():
+                print score
+                raise ValueError('Scores are NaN')
+            
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
             loss_mse = self.mse_loss.forward(score, target)
 
-            if np.isnan(score.data.cpu()).any():
-                raise ValueError('Scores are NaN')
+
             if np.isnan(float(loss_crossentropy.data[0])):
                 raise ValueError('Cross entropy loss is nan while validating')
             if np.isnan(float(loss_mse.data[0])):
