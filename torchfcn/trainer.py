@@ -316,11 +316,11 @@ class Trainer(object):
                     # TODO: If this has too much variance, print the cumulative train loss since last print
                     self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
                     self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
-                if self.iteration % self.interval_validate == 0:
-                    self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
-                    self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
-                    self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
-                    self._tensorboard_writer.add_scalar('mean_iu/validation', val_iu, self.iteration)
+                # if self.iteration % self.interval_validate == 0:
+                #     self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
+                #     self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
+                #     self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
+                #     self._tensorboard_writer.add_scalar('mean_iu/validation', val_iu, self.iteration)
 
             if self.iteration >= self.max_iter:
                 break

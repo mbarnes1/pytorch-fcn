@@ -40,6 +40,7 @@ def normalize_unit(scores, dim=1):
     """
     l2_norms = torch.norm(scores, 2, dim, keepdim=True)
     if not (l2_norms > 0).all():
+        print scores
         print l2_norms
         raise ValueError('All l2 norms must be greater than 0.')
     normalized_scores = scores / l2_norms
