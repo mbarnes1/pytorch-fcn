@@ -43,8 +43,8 @@ def normalize_unit(scores, dim=1):
         print scores
         print l2_norms
         raise ValueError('All l2 norms must be greater than 0.')
-    else:
-        print 'l2 norms are okay.\n'
+    #else:
+    #    print 'l2 norms are okay.\n'
     normalized_scores = scores / l2_norms
     assert ~np.isnan(normalized_scores.data.cpu().numpy()).any()
     return normalized_scores
