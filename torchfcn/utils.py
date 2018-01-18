@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 def _fast_hist(label_true, label_pred, n_class):
@@ -28,3 +29,15 @@ def label_accuracy_score(label_trues, label_preds, n_class):
     freq = hist.sum(axis=1) / hist.sum()
     fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
     return acc, acc_cls, mean_iu, fwavacc
+
+
+def normalize_unit(scores, dim=1):
+    """ Normalize scores such that vectors along dimension have unit l2 norm.
+
+    :param scores: Tensor
+    :param dim: Dimension to normalize along
+    :return normalized_scores: Tensor with same shape as scores, with all vectors along dimension having unit l2 norm.
+    """
+    l2_norms = torch.norm(scores, 2, dim, keepdim=True)
+    normalized_scores = scores / l2_norms
+    return normalized_scores
