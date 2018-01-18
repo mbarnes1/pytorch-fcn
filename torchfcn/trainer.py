@@ -282,6 +282,10 @@ class Trainer(object):
             data, target = Variable(data), Variable(target)
             self.optim.zero_grad()
             score = self.model(data)
+            if np.isnan(score.data.cpu()).any():
+                print score
+                raise ValueError('Scores are NaN')
+            
             score_softmax = F.softmax(score, dim=1)
             score_unit = normalize_unit(score, dim=1)
 
@@ -289,8 +293,10 @@ class Trainer(object):
             loss_mse = self.mse_loss.forward(score, target) / len(data)
             loss = loss_mse
 
-            if np.isnan(float(loss.data[0])):
-                raise ValueError('loss is nan while training')
+            if np.isnan(float(loss_crossentropy.data[0])):
+                raise ValueError('Cross entropy loss is nan while training')
+            if np.isnan(float(loss_mse.data[0])):
+                raise ValueError('MSE loss is nan while training')
             loss.backward()
             self.optim.step()
 
