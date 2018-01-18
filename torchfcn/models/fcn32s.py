@@ -98,11 +98,11 @@ class FCN32s(nn.Module):
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                #m.weight.data.zero_()
-                nn.init.normal(m.weight.data)
+                m.weight.data.zero_()
+                #nn.init.normal(m.weight.data)
                 if m.bias is not None:
-                    #m.bias.data.zero_()
-                    nn.init.normal(m.bias.data)
+                    m.bias.data.zero_()
+                    #nn.init.normal(m.bias.data)
             if isinstance(m, nn.ConvTranspose2d):
                 assert m.kernel_size[0] == m.kernel_size[1]
                 initial_weight = get_upsampling_weight(

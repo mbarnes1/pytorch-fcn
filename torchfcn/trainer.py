@@ -191,20 +191,19 @@ class Trainer(object):
                 print score
                 raise ValueError('Scores are NaN')
 
-            #score_softmax = F.softmax(score, dim=1)
+            score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
-            #loss_mse = self.mse_loss.forward(score, target)
-
+            loss_mse = self.mse_loss.forward(score_softmax_normalized, target)
 
             if np.isnan(float(loss_crossentropy.data[0])):
                 raise ValueError('Cross entropy loss is nan while validating')
-            #if np.isnan(float(loss_mse.data[0])):
-            #    raise ValueError('MSE loss is nan while validating')
+            if np.isnan(float(loss_mse.data[0])):
+                raise ValueError('MSE loss is nan while validating')
 
             val_loss_crossentropy += float(loss_crossentropy.data[0]) / len(data)
-            #val_loss_mse += float(loss_mse.data[0]) / len(data)
+            val_loss_mse += float(loss_mse.data[0]) / len(data)
 
             imgs = data.data.cpu()
             lbl_pred = score.data.max(1)[1].cpu().numpy()[:, :, :]
@@ -290,14 +289,14 @@ class Trainer(object):
             if np.isnan(float(loss_crossentropy.data[0])):
                 raise ValueError('Cross entropy loss is nan while training')
 
-            #score_softmax = F.softmax(score, dim=1)
+            score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
 
-            #loss_mse = self.mse_loss.forward(score, target) / len(data)
-            loss = loss_crossentropy
+            loss_mse = self.mse_loss.forward(score_softmax_normalized, target) / len(data)
+            loss = loss_mse
 
-            #if np.isnan(float(loss_mse.data[0])):
-            #    raise ValueError('MSE loss is nan while training')
+            if np.isnan(float(loss_mse.data[0])):
+                raise ValueError('MSE loss is nan while training')
             loss.backward()
             self.optim.step()
 
@@ -326,12 +325,12 @@ class Trainer(object):
                 if self.iteration % self._interval_train_loss == 0:
                     # TODO: If this has too much variance, print the cumulative train loss since last print
                     self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
-                    #self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
-                # if self.iteration % self.interval_validate == 0:
-                #     self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
-                #     self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
-                #     self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
-                #     self._tensorboard_writer.add_scalar('mean_iu/validation', val_iu, self.iteration)
+                    self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
+                if self.iteration % self.interval_validate == 0:
+                    self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
+                    self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
+                    self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
+                    self._tensorboard_writer.add_scalar('mean_iu/validation', val_iu, self.iteration)
 
             if self.iteration >= self.max_iter:
                 break
