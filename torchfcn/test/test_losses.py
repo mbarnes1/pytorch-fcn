@@ -12,8 +12,8 @@ class MyTestCase(unittest.TestCase):
     def test_mse(self):
         N = 2  # batch size
         C = 3  # pixel embedding dimension
-        H = 300  # image height
-        W = 500  # image width
+        H = 10  # image height
+        W = 20  # image width
 
         # All one cluster vs. all different clusters has maximal mistake
         labels = range(0, H*W)  # all different clusters

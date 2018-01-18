@@ -93,14 +93,16 @@ class FCN32s(nn.Module):
         self.upscore = nn.ConvTranspose2d(n_class, n_class, 64, stride=32,
                                           bias=False)
 
-        #self._initialize_weights()
+        self._initialize_weights()
 
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                m.weight.data.zero_()
+                #m.weight.data.zero_()
+                nn.init.xavier_normal(m.weight.data)
                 if m.bias is not None:
-                    m.bias.data.zero_()
+                    #m.bias.data.zero_()
+                    nn.init.xavier_normal(m.bias.data)
             if isinstance(m, nn.ConvTranspose2d):
                 assert m.kernel_size[0] == m.kernel_size[1]
                 initial_weight = get_upsampling_weight(
