@@ -187,13 +187,13 @@ class Trainer(object):
                 data, target = data.cuda(), target.cuda()
             data, target = Variable(data, volatile=True), Variable(target)
             score = self.model(data)
-            #score_softmax = F.softmax(score, dim=1)
-            score_unit = normalize_unit(score, dim=1)
-
             if np.isnan(score.data.cpu()).any():
                 print score
                 raise ValueError('Scores are NaN')
-            
+
+            #score_softmax = F.softmax(score, dim=1)
+            score_unit = normalize_unit(score, dim=1)
+
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
             loss_mse = self.mse_loss.forward(score, target)
 
