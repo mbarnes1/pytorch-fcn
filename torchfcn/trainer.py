@@ -267,7 +267,6 @@ class Trainer(object):
             self._tensorboard_writer.add_scalar('mean_iu/validation', mean_iu, self.iteration)
             # Embed only the first image
 
-
     def train_epoch(self):
         self.model.train()
 
