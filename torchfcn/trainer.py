@@ -187,8 +187,8 @@ class Trainer(object):
             if batch_idx == 0:
                 n, d, h, w = score.size()
                 first_image_scores = score.squeeze(dim=0).permute(2, 0, 1)  # H x W x D
-                first_image_scores.view(-1, d)  # hw x d
-                first_image_labels = target.squeeze(dim=0).view(-1)  # hw
+                first_image_scores.contiguous().view(-1, d)  # hw x d
+                first_image_labels = target.squeeze(dim=0).contiguous().view(-1)  # hw
 
             score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
