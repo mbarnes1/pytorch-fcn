@@ -112,7 +112,7 @@ class FCN32s(nn.Module):
     def forward(self, x):
         """
         :param x: 1 x C x H x W Variable (unsure if its H x W or W x H)
-        :return:
+        :return h: 1 x D x H x W Variable, where D is the number of classes or embedding dimension.
         """
         h = x
         h = self.relu1_1(self.conv1_1(h))

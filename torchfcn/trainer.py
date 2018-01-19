@@ -14,7 +14,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchfcn
 from torchfcn.utils import normalize_unit
-import tqdm
 
 
 class MSEAdjacencyLoss(nn.Module):
@@ -175,10 +174,7 @@ class Trainer(object):
         val_loss_crossentropy = val_loss_mse = 0
         visualizations = []
         label_trues, label_preds = [], []
-        for batch_idx, (data, target) in tqdm.tqdm(
-                enumerate(self.val_loader), total=len(self.val_loader),
-                desc='Valid iteration=%d' % self.iteration, ncols=80,
-                leave=False):
+        for batch_idx, (data, target) in enumerate(self.val_loader):
             if self.cuda:
                 data, target = data.cuda(), target.cuda()
             data, target = Variable(data, volatile=True), Variable(target)
@@ -188,6 +184,11 @@ class Trainer(object):
             if np.isnan(score.data.cpu()).any():
                 print score
                 raise ValueError('Scores are NaN')
+            if batch_idx == 0:
+                n, d, h, w = score.size()
+                first_image_scores = score.squeeze(dim=0).permute(2, 0, 1)  # H x W x D
+                first_image_scores.view(-1, d)  # hw x d
+                first_image_labels = target.squeeze(dim=0).view(-1)  # hw
 
             score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
@@ -262,22 +263,24 @@ class Trainer(object):
             self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
             self._tensorboard_writer.add_scalar('mean_iu/validation', mean_iu, self.iteration)
             # Embed only the first image
-            #self._tensorboard_writer.add_embedding(scores[0], )
+            self._tensorboard_writer.add_embedding(first_image_scores,
+                                                   metadata=list(first_image_labels.data.cpu().numpy()),
+                                                   global_step=self.iteration,
+                                                   tag='all features')
 
     def train_epoch(self):
         self.model.train()
 
         n_class = len(self.train_loader.dataset.class_names)
 
-        for batch_idx, (data, target) in tqdm.tqdm(
-                enumerate(self.train_loader), total=len(self.train_loader),
-                desc='Train epoch=%d' % self.epoch, ncols=80, leave=False):
+        for batch_idx, (data, target) in enumerate(self.train_loader):
             iteration = batch_idx + self.epoch * len(self.train_loader)
             if self.iteration != 0 and (iteration - 1) != self.iteration:
                 continue  # for resuming
             self.iteration = iteration
 
             if self.iteration % self.interval_validate == 0:
+                print 'Epoch {}. Iteration {}. Validating...'.format(self.epoch, self.iteration)
                 self.validate()
 
             assert self.model.training
@@ -299,7 +302,7 @@ class Trainer(object):
             #score_unit = normalize_unit(score, dim=1)
 
             loss_mse = self.mse_loss.forward(score_softmax_normalized, target) / len(data)
-            loss = loss_mse
+            loss = loss_crossentropy
 
             if np.isnan(float(loss_mse.data[0])):
                 raise ValueError('MSE loss is nan while training')
@@ -329,6 +332,7 @@ class Trainer(object):
             # TODO: Refactor such that validation and writing to tensorboard happen in the same if statement.
             if self._tensorboard_writer is not None:
                 if self.iteration % self._interval_train_loss == 0:
+                    print 'Epoch {}. Iteration {}. Training...'.format(self.epoch, self.iteration)
                     # TODO: If this has too much variance, print the cumulative train loss since last print
                     self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
                     self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
@@ -338,8 +342,7 @@ class Trainer(object):
 
     def train(self):
         max_epoch = int(math.ceil(1. * self.max_iter / len(self.train_loader)))
-        for epoch in tqdm.trange(self.epoch, max_epoch,
-                                 desc='Train', ncols=80):
+        for epoch in xrange(self.epoch, max_epoch):
             self.epoch = epoch
             self.train_epoch()
             if self.iteration >= self.max_iter:
