@@ -165,11 +165,7 @@ class Trainer(object):
 
     def validate(self):
         """
-        Writes a bunch of metrics to the log file.
-        :return val_loss_crossentropy: The validation cross-entropy loss.
-        :return val_loss_mse: The validation MSE loss.
-        :return val_acc: The validation accuracy.
-        :return mean_iu: The validation mean IU score
+        Writes a bunch of metrics to the log file and Tensorboard.
         """
         training = self.model.training
         self.model.eval()
@@ -187,6 +183,8 @@ class Trainer(object):
                 data, target = data.cuda(), target.cuda()
             data, target = Variable(data, volatile=True), Variable(target)
             score = self.model(data)
+            print 'Score size {}'.format(score.size())
+
             if np.isnan(score.data.cpu()).any():
                 print score
                 raise ValueError('Scores are NaN')
@@ -256,7 +254,15 @@ class Trainer(object):
         if training:
             self.model.train()
         val_acc = metrics[0]
-        return val_loss_crossentropy, val_loss_mse, val_acc, mean_iu
+
+        # Write outputs to Tensorboard
+        if self._tensorboard_writer is not None:
+            self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
+            self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
+            self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
+            self._tensorboard_writer.add_scalar('mean_iu/validation', mean_iu, self.iteration)
+            # Embed only the first image
+            #self._tensorboard_writer.add_embedding(scores[0], )
 
     def train_epoch(self):
         self.model.train()
@@ -272,7 +278,7 @@ class Trainer(object):
             self.iteration = iteration
 
             if self.iteration % self.interval_validate == 0:
-                val_loss_crossentropy, val_loss_mse, val_acc, val_iu = self.validate()
+                self.validate()
 
             assert self.model.training
 
@@ -326,11 +332,6 @@ class Trainer(object):
                     # TODO: If this has too much variance, print the cumulative train loss since last print
                     self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
                     self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
-                if self.iteration % self.interval_validate == 0:
-                    self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
-                    self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
-                    self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
-                    self._tensorboard_writer.add_scalar('mean_iu/validation', val_iu, self.iteration)
 
             if self.iteration >= self.max_iter:
                 break

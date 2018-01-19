@@ -34,4 +34,4 @@ class MyTestCase(unittest.TestCase):
 
     def test_normalize_assertions(self):
         x = Variable(torch.zeros(2, 5, 10).float())
-        self.assertRaises(AssertionError, normalize_unit, x)
+        self.assertRaises(ValueError, normalize_unit, x)
