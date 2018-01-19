@@ -185,16 +185,10 @@ class Trainer(object):
                 raise ValueError('Scores are NaN')
             if batch_idx == 0:
                 n, d, h, w = score.size()
-                print score.size()
-                first_image_scores = score.squeeze(dim=0).permute(2, 0, 1)  # H x W x D
-                print first_image_scores.size()
+                first_image_scores = score.squeeze(dim=0).permute(1, 2, 0)  # H x W x D
                 first_image_scores = first_image_scores.contiguous().view(-1, d)  # hw x d
                 first_image_labels = target.squeeze(dim=0).contiguous().view(-1)  # hw
-                print first_image_scores.size()
-                print first_image_labels.size()
-                #print list(first_image_labels.data.cpu().numpy())
-                print len(list(first_image_labels.data.cpu().numpy()))
-                self._tensorboard_writer.add_embedding(first_image_scores,
+                self._tensorboard_writer.add_embedding(first_image_scores.data,
                                                        metadata=list(first_image_labels.data.cpu().numpy()),
                                                        global_step=self.iteration,
                                                        tag='all features')
