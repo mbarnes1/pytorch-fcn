@@ -179,7 +179,6 @@ class Trainer(object):
                 data, target = data.cuda(), target.cuda()
             data, target = Variable(data, volatile=True), Variable(target)
             score = self.model(data)
-            print 'Score size {}'.format(score.size())
 
             if np.isnan(score.data.cpu()).any():
                 print score
@@ -189,6 +188,14 @@ class Trainer(object):
                 first_image_scores = score.squeeze(dim=0).permute(2, 0, 1)  # H x W x D
                 first_image_scores.contiguous().view(-1, d)  # hw x d
                 first_image_labels = target.squeeze(dim=0).contiguous().view(-1)  # hw
+                print first_image_scores.size()
+                print first_image_labels.size()
+                print list(first_image_labels.data.cpu().numpy())
+                print len(list(first_image_labels.data.cpu().numpy()))
+                self._tensorboard_writer.add_embedding(first_image_scores,
+                                                       metadata=list(first_image_labels.data.cpu().numpy()),
+                                                       global_step=self.iteration,
+                                                       tag='all features')
 
             score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
@@ -263,10 +270,7 @@ class Trainer(object):
             self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
             self._tensorboard_writer.add_scalar('mean_iu/validation', mean_iu, self.iteration)
             # Embed only the first image
-            self._tensorboard_writer.add_embedding(first_image_scores,
-                                                   metadata=list(first_image_labels.data.cpu().numpy()),
-                                                   global_step=self.iteration,
-                                                   tag='all features')
+
 
     def train_epoch(self):
         self.model.train()
