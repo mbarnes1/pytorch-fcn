@@ -99,7 +99,7 @@ class FCN32s(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 #m.weight.data.zero_()
-                nn.init.xavier_normal(m.weight.data)
+                nn.init.xavier_normal(m.weight.data, gain=0.0001)
                 if m.bias is not None:
                     m.bias.data.zero_()
                     #nn.init.normal(m.bias.data)
