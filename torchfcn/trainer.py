@@ -16,6 +16,9 @@ import torchfcn
 from torchfcn.utils import normalize_unit
 
 
+MAX_TENSORBOARD_EMBEDDINGS = 10000  # write at most this many pixels to tensorboard embedding
+
+
 class MSEAdjacencyLoss(nn.Module):
     """
     An unbiased estimator of the mean squared error between the true and predicted graph adjacency matrices.
@@ -185,19 +188,23 @@ class Trainer(object):
                 raise ValueError('Scores are NaN')
             if batch_idx == 0:
                 n, d, h, w = score.size()
+                assert n == 1
                 first_image_scores = score.squeeze(dim=0).permute(1, 2, 0)  # H x W x D
                 first_image_scores = first_image_scores.contiguous().view(-1, d)  # hw x d
                 first_image_labels = target.squeeze(dim=0).contiguous().view(-1)  # hw
+                if h*w > MAX_TENSORBOARD_EMBEDDINGS:
+                    random_indices = Variable(first_image_labels.data.new(random.sample(xrange(h*w), MAX_TENSORBOARD_EMBEDDINGS)))
+                    first_image_scores = first_image_scores[random_indices, :]
+                    first_image_labels = first_image_labels[random_indices]
                 self._tensorboard_writer.add_embedding(first_image_scores.data,
                                                        metadata=list(first_image_labels.data.cpu().numpy()),
-                                                       global_step=self.iteration,
-                                                       tag='all features')
+                                                       global_step=self.iteration)
 
             score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
 
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
-            loss_mse = self.mse_loss.forward(score_softmax_normalized, target)
+            loss_mse = self.mse_loss(score_softmax_normalized, target)
 
             if np.isnan(float(loss_crossentropy.data[0])):
                 raise ValueError('Cross entropy loss is nan while validating')
@@ -265,7 +272,6 @@ class Trainer(object):
             self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
             self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
             self._tensorboard_writer.add_scalar('mean_iu/validation', mean_iu, self.iteration)
-            # Embed only the first image
 
     def train_epoch(self):
         self.model.train()
@@ -300,7 +306,7 @@ class Trainer(object):
             score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
 
-            loss_mse = self.mse_loss.forward(score_softmax_normalized, target) / len(data)
+            loss_mse = self.mse_loss(score_softmax_normalized, target) / len(data)
             loss = loss_crossentropy
 
             if np.isnan(float(loss_mse.data[0])):
@@ -328,13 +334,17 @@ class Trainer(object):
                 f.write(','.join(log) + '\n')
 
             # Write results to Tensorboard
-            # TODO: Refactor such that validation and writing to tensorboard happen in the same if statement.
-            if self._tensorboard_writer is not None:
-                if self.iteration % self._interval_train_loss == 0:
-                    print 'Epoch {}. Iteration {}. Training...'.format(self.epoch, self.iteration)
-                    # TODO: If this has too much variance, print the cumulative train loss since last print
-                    self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
-                    self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
+            if self._tensorboard_writer is not None and self.iteration % self._interval_train_loss == 0:
+                print 'Epoch {}. Iteration {}. Training...'.format(self.epoch, self.iteration)
+                # TODO: If this has too much variance, print the cumulative train loss since last print
+                self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
+                self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
+
+                # Network gradients and weights
+                for name, param in self.model.named_parameters():
+                    self._tensorboard_writer.add_histogram(name + 'value', param.data.cpu().numpy(), global_step=self.iteration)
+                    self._tensorboard_writer.add_histogram(name + 'gradient', param.grad.data.cpu().numpy(),
+                                                           global_step=self.iteration)
 
             if self.iteration >= self.max_iter:
                 break

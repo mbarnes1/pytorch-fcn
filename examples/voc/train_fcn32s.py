@@ -42,7 +42,7 @@ def get_log_dir(model_name, config_id, cfg):
     #        continue
     #    name += '_%s-%s' % (k.upper(), v)
     #now = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-    name += datetime.now().strftime('%b%d_%H-%M-%S')
+    name += '_{}'.format(datetime.now().strftime('%b%d_%H-%M-%S'))
     name += '_VCS-%s' % git_hash()
     name += '_{}'.format(socket.gethostname().split('.')[0])
     #name += '_TIME-%s' % now.strftime('%Y%m%d-%H%M%S')
