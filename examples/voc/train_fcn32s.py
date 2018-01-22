@@ -18,7 +18,7 @@ configurations = {
     # https://github.com/shelhamer/fcn.berkeleyvision.org
     1: dict(
         max_iteration=100000,
-        lr=1.0e-2,  # -10
+        lr=1.0e-10,  # -10
         momentum=0.99,
         weight_decay=0.0005,
         interval_validate=4000,
