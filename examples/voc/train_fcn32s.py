@@ -18,7 +18,7 @@ configurations = {
     # https://github.com/shelhamer/fcn.berkeleyvision.org
     1: dict(
         max_iteration=100000,
-        lr=1.0e-10,  # -10
+        lr=1.0e-8,  # -10
         momentum=0.99,
         weight_decay=0.0005,
         interval_validate=4000,
@@ -33,19 +33,10 @@ def git_hash():
 
 
 def get_log_dir(model_name, config_id, cfg):
-    # load config
-    name = '001-mse_lr1e-10_5000edges_nosoftmax_xavier1e-10'
-    #name = 'MODEL-%s_CFG-%03d' % (model_name, config_id)
-    #for k, v in cfg.items():
-    #    v = str(v)
-    #    if '/' in v:
-    #        continue
-    #    name += '_%s-%s' % (k.upper(), v)
-    #now = datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
-    name += '_{}'.format(datetime.now().strftime('%b%d_%H-%M-%S'))
+    name = '001_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
+    name += '_mse_lr1e-8_xavier1e-8'
     name += '_VCS-%s' % git_hash()
     name += '_{}'.format(socket.gethostname().split('.')[0])
-    #name += '_TIME-%s' % now.strftime('%Y%m%d-%H%M%S')
 
     # create out
     log_dir = osp.join(here, 'logs', name)
