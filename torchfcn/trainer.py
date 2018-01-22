@@ -306,8 +306,10 @@ class Trainer(object):
             score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
             #score_unit = normalize_unit(score, dim=1)
 
-            loss_mse = self.mse_loss(score_softmax_normalized, target) / len(data)
-            loss = loss_crossentropy
+            loss_mse = self.mse_loss(score, target) / len(data)
+            loss = loss_mse
+
+            print 'Epoch {}. Iteration {}. Training loss {}'.format(self.epoch, self.iteration, loss)
 
             if np.isnan(float(loss_mse.data[0])):
                 raise ValueError('MSE loss is nan while training')
@@ -335,7 +337,6 @@ class Trainer(object):
 
             # Write results to Tensorboard
             if self._tensorboard_writer is not None and self.iteration % self._interval_train_loss == 0:
-                print 'Epoch {}. Iteration {}. Training...'.format(self.epoch, self.iteration)
                 # TODO: If this has too much variance, print the cumulative train loss since last print
                 self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
                 self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
