@@ -309,7 +309,7 @@ class Trainer(object):
             loss_mse = self.mse_loss(score, target) / len(data)
             loss = loss_mse
 
-            print 'Epoch {}. Iteration {}. Training loss {}'.format(self.epoch, self.iteration, loss)
+            print 'Epoch {}. Iteration {}. Training loss {}'.format(self.epoch, self.iteration, loss.data[0])
 
             if np.isnan(float(loss_mse.data[0])):
                 raise ValueError('MSE loss is nan while training')
