@@ -34,7 +34,7 @@ def git_hash():
 
 def get_log_dir(model_name, config_id, cfg):
     # load config
-    name = '001-mse_lr1e-10_5000edges_nosoftmax_xavier1e-4'
+    name = '001-mse_lr1e-10_5000edges_nosoftmax_xavier1e-10'
     #name = 'MODEL-%s_CFG-%03d' % (model_name, config_id)
     #for k, v in cfg.items():
     #    v = str(v)
