@@ -288,13 +288,6 @@ class Trainer(object):
             if self.iteration % self.interval_validate == 0:
                 print 'Epoch {}. Iteration {}. Validating...'.format(self.epoch, self.iteration)
                 self.validate()
-                # Network gradients and weights
-                for name, param in self.model.named_parameters():
-                    self._tensorboard_writer.add_histogram(name + 'value', param.data.cpu().numpy(),
-                                                           global_step=self.iteration)
-                    self._tensorboard_writer.add_histogram(name + 'gradient', param.grad.data.cpu().numpy(),
-                                                           global_step=self.iteration)
-
 
             assert self.model.training
 
@@ -341,9 +334,18 @@ class Trainer(object):
                 f.write(','.join(log) + '\n')
 
             # Write results to Tensorboard
-            if self._tensorboard_writer is not None and self.iteration % self._interval_train_loss == 0:
-                self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
-                self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
+            if self._tensorboard_writer is not None:
+                if self.iteration % self._interval_train_loss == 0:
+                    self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
+                    self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
+
+                if self.iteration % self.interval_validate == 0:
+                    # Network gradients and weights
+                    for name, param in self.model.named_parameters():
+                        self._tensorboard_writer.add_histogram(name + 'value', param.data.cpu().numpy(),
+                                                               global_step=self.iteration)
+                        self._tensorboard_writer.add_histogram(name + 'gradient', param.grad.data.cpu().numpy(),
+                                                               global_step=self.iteration)
 
             if self.iteration >= self.max_iter:
                 break

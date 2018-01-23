@@ -89,6 +89,7 @@ def main():
     gpu = args.gpu
     cfg = configurations[args.config]
     out = get_log_dir('fcn32s', args.config, cfg)
+    print 'Running experiment {}'.format(out)
     resume = args.resume
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu)
