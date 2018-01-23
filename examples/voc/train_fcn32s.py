@@ -112,7 +112,7 @@ def main():
 
     # 2. model
 
-    model = torchfcn.models.FCN32s(n_class=21, gain=cfg['init_gain'])
+    model = torchfcn.models.FCN32s(n_class=21, init_gain=cfg['init_gain'])
     start_epoch = 0
     start_iteration = 0
     if resume:
