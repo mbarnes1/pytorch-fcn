@@ -22,7 +22,7 @@ configurations = {
         momentum=0.99,
         weight_decay=0.0005,
         interval_validate=4000,
-        init_gain=1.0e-8  # used for initiailizing network weights
+        init_gain=1.0e-4  # used for initiailizing network weights
     )
 }
 
@@ -35,7 +35,7 @@ def git_hash():
 
 def get_log_dir(model_name, config_id, cfg):
     name = '001_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
-    name += '_mse_lr1e-8_xavier1e-8'
+    name += '_mse_lr1e-8_xavier1e-4_bias1'
     name += '_VCS-%s' % git_hash()
     name += '_{}'.format(socket.gethostname().split('.')[0])
 

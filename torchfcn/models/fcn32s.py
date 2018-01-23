@@ -97,16 +97,17 @@ class FCN32s(nn.Module):
         self.upscore = nn.ConvTranspose2d(n_class, n_class, 64, stride=32,
                                           bias=False)
 
-        self._initialize_weights(init_gain)
+        self._initialize_weights(init_gain, n_class)
 
-    def _initialize_weights(self, init_gain):
+    def _initialize_weights(self, init_gain, n_class):
         print 'Initializing with gain {}'.format(init_gain)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 #m.weight.data.zero_()
                 nn.init.xavier_normal(m.weight.data, gain=init_gain)
                 if m.bias is not None:
-                    m.bias.data.zero_()
+                    #m.bias.data.zero_()
+                    torch.nn.init.constant(m.bias.data, n_class**(-0.5))  # unit norm vector
                     #nn.init.normal(m.bias.data)
             if isinstance(m, nn.ConvTranspose2d):
                 assert m.kernel_size[0] == m.kernel_size[1]
