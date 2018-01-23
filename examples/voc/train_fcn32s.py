@@ -22,6 +22,7 @@ configurations = {
         momentum=0.99,
         weight_decay=0.0005,
         interval_validate=4000,
+        init_gain=1.0e-8  # used for initiailizing network weights
     )
 }
 
@@ -111,7 +112,7 @@ def main():
 
     # 2. model
 
-    model = torchfcn.models.FCN32s(n_class=21)
+    model = torchfcn.models.FCN32s(n_class=21, gain=configurations.init_gain)
     start_epoch = 0
     start_iteration = 0
     if resume:

@@ -39,6 +39,10 @@ class MSEAdjacencyLoss(nn.Module):
         :param target: N x H x W Long Variable. Instance labels for every channel
         :return loss:
         """
+        # Preprocess the input
+        # input = F.softmax(input, dim=1)  # (optional) softmax
+        # input = normalize_unit(score, dim=1) # (optional) normalize to unit vectors
+
         # Randomly sample nodes
         n, c, h, w = input.size()
         total_nodes_per_image = c * h
@@ -200,11 +204,8 @@ class Trainer(object):
                                                        metadata=list(first_image_labels.data.cpu().numpy()),
                                                        global_step=self.iteration)
 
-            score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
-            #score_unit = normalize_unit(score, dim=1)
-
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
-            loss_mse = self.mse_loss(score_softmax_normalized, target)
+            loss_mse = self.mse_loss(score, target)
 
             if np.isnan(float(loss_crossentropy.data[0])):
                 raise ValueError('Cross entropy loss is nan while validating')
@@ -287,6 +288,13 @@ class Trainer(object):
             if self.iteration % self.interval_validate == 0:
                 print 'Epoch {}. Iteration {}. Validating...'.format(self.epoch, self.iteration)
                 self.validate()
+                # Network gradients and weights
+                for name, param in self.model.named_parameters():
+                    self._tensorboard_writer.add_histogram(name + 'value', param.data.cpu().numpy(),
+                                                           global_step=self.iteration)
+                    self._tensorboard_writer.add_histogram(name + 'gradient', param.grad.data.cpu().numpy(),
+                                                           global_step=self.iteration)
+
 
             assert self.model.training
 
@@ -302,9 +310,6 @@ class Trainer(object):
             loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
             if np.isnan(float(loss_crossentropy.data[0])):
                 raise ValueError('Cross entropy loss is nan while training')
-
-            score_softmax_normalized = normalize_unit(F.softmax(score, dim=1), dim=1)
-            #score_unit = normalize_unit(score, dim=1)
 
             loss_mse = self.mse_loss(score, target) / len(data)
             loss = loss_mse
@@ -337,15 +342,8 @@ class Trainer(object):
 
             # Write results to Tensorboard
             if self._tensorboard_writer is not None and self.iteration % self._interval_train_loss == 0:
-                # TODO: If this has too much variance, print the cumulative train loss since last print
                 self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
                 self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
-
-                # Network gradients and weights
-                for name, param in self.model.named_parameters():
-                    self._tensorboard_writer.add_histogram(name + 'value', param.data.cpu().numpy(), global_step=self.iteration)
-                    self._tensorboard_writer.add_histogram(name + 'gradient', param.grad.data.cpu().numpy(),
-                                                           global_step=self.iteration)
 
             if self.iteration >= self.max_iter:
                 break

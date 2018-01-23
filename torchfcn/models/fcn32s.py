@@ -36,7 +36,11 @@ class FCN32s(nn.Module):
             md5='8acf386d722dc3484625964cbe2aba49',
         )
 
-    def __init__(self, n_class=21):
+    def __init__(self, n_class=21, init_gain=1e-8):
+        """
+        :param n_class: Number of output classes
+        :param init_gain: Gain used for initializing network weights
+        """
         super(FCN32s, self).__init__()
         # conv1
         self.conv1_1 = nn.Conv2d(3, 64, 3, padding=100)
@@ -93,13 +97,14 @@ class FCN32s(nn.Module):
         self.upscore = nn.ConvTranspose2d(n_class, n_class, 64, stride=32,
                                           bias=False)
 
-        self._initialize_weights()
+        self._initialize_weights(init_gain)
 
-    def _initialize_weights(self):
+    def _initialize_weights(self, init_gain):
+        print 'Initializing with gain {}'.format(init_gain)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 #m.weight.data.zero_()
-                nn.init.xavier_normal(m.weight.data, gain=0.00000001)
+                nn.init.xavier_normal(m.weight.data, gain=init_gain)
                 if m.bias is not None:
                     m.bias.data.zero_()
                     #nn.init.normal(m.bias.data)
