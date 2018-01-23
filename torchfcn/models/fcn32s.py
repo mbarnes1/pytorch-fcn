@@ -42,6 +42,9 @@ class FCN32s(nn.Module):
         :param init_gain: Gain used for initializing network weights
         """
         super(FCN32s, self).__init__()
+
+        self._n_class = n_class
+
         # conv1
         self.conv1_1 = nn.Conv2d(3, 64, 3, padding=100)
         self.relu1_1 = nn.ReLU(inplace=True)
@@ -106,8 +109,8 @@ class FCN32s(nn.Module):
                 #m.weight.data.zero_()
                 nn.init.xavier_normal(m.weight.data, gain=init_gain)
                 if m.bias is not None:
-                    #m.bias.data.zero_()
-                    torch.nn.init.constant(m.bias.data, n_class**(-0.5))  # unit norm vector
+                    m.bias.data.zero_()
+                    #torch.nn.init.constant(m.bias.data, n_class**(-0.5))  # unit norm vector
                     #nn.init.normal(m.bias.data)
             if isinstance(m, nn.ConvTranspose2d):
                 assert m.kernel_size[0] == m.kernel_size[1]
@@ -155,6 +158,7 @@ class FCN32s(nn.Module):
         h = self.upscore(h)
         h = h[:, :, 19:19 + x.size()[2], 19:19 + x.size()[3]].contiguous()
 
+        h = h + self._n_class**(-0.5)
         return h
 
     def copy_params_from_vgg16(self, vgg16):
