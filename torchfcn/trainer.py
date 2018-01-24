@@ -306,7 +306,7 @@ class Trainer(object):
                 raise ValueError('Cross entropy loss is nan while training')
 
             loss_mse = self.mse_loss(score, target) / len(data)
-            loss = loss_mse
+            loss = loss_crossentropy
 
             print 'Epoch {}. Iteration {}. Training loss {}'.format(self.epoch, self.iteration, loss.data[0])
 
