@@ -40,7 +40,7 @@ class MSEAdjacencyLoss(nn.Module):
         :return loss:
         """
         # Preprocess the input
-        # input = F.softmax(input, dim=1)  # (optional) softmax
+        input = F.softmax(input, dim=1)  # (optional) softmax
         # input = normalize_unit(score, dim=1) # (optional) normalize to unit vectors
 
         # Randomly sample nodes
@@ -168,7 +168,7 @@ class Trainer(object):
         self.iteration = 0
         self.best_mean_iu = 0
 
-        self.mse_loss = MSEAdjacencyLoss(10000)
+        self.mse_loss = MSEAdjacencyLoss(20000)
 
     def validate(self):
         """
