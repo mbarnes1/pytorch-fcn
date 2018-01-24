@@ -68,8 +68,8 @@ class MSEAdjacencyLoss(nn.Module):
 
         input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
         target_adjacency = labels_to_adjacency(target_subsample.view(n, -1))
-        print 'Graph edges: {}'.format(torch.sum(target_adjacency))
-        print 'Number nodes: {}'.format(target_adjacency.size(0).data[0])
+        print 'Graph edges: {}'.format(torch.sum(target_adjacency).data[0])
+        print 'Number nodes: {}'.format(target_adjacency.size(0))
 
         #off_diagonal_mask = ~torch.eye(self._n_nodes).byte().unsqueeze(dim=0).expand(n, -1, -1)
         #loss = self._mse(input_adjacency[off_diagonal_mask], target_adjacency[off_diagonal_mask])  # MSE per edge, excluding self edges
