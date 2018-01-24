@@ -41,7 +41,7 @@ class MSEAdjacencyLoss(nn.Module):
         """
         # Preprocess the input
         # input = F.softmax(input, dim=1)  # (optional) softmax
-        # input = normalize_unit(score, dim=1) # (optional) normalize to unit vectors
+        input = normalize_unit(input, dim=1)  # (optional) normalize to unit vectors
 
         # Randomly sample nodes
         n, c, h, w = input.size()
