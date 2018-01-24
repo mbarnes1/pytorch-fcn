@@ -43,6 +43,12 @@ class MSEAdjacencyLoss(nn.Module):
         # input = F.softmax(input, dim=1)  # (optional) softmax
         # input = normalize_unit(score, dim=1) # (optional) normalize to unit vectors
 
+        # Print target summaries (for debugging)
+        unique, counts = np.unique(target.data.cpu().numpy(), return_counts=True)
+        print 'Unique label counts: '
+        for label, count in zip(unique, counts):
+            print 'Label {}: {} occurences'.format(label, count)
+
         # Randomly sample nodes
         n, c, h, w = input.size()
         total_nodes_per_image = c * h
@@ -55,9 +61,16 @@ class MSEAdjacencyLoss(nn.Module):
         # Compute loss
         input_subsample = torch.gather(input.view(n, c, -1), 2, random_indices.unsqueeze(dim=1).expand(-1, c, -1))  # N x C x n_nodes
         target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
+        unique, counts = np.unique(target_subsample.data.cpu().numpy(), return_counts=True)
+        print 'Subsample unique label counts: '
+        for label, count in zip(unique, counts):
+            print 'Label {}: {} occurences'.format(label, count)
 
         input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
         target_adjacency = labels_to_adjacency(target_subsample.view(n, -1))
+        print 'Graph edges: {}'.format(torch.sum(target_adjacency))
+        print 'Number nodes: {}'.format(target_adjacency.size(0))
+
         #off_diagonal_mask = ~torch.eye(self._n_nodes).byte().unsqueeze(dim=0).expand(n, -1, -1)
         #loss = self._mse(input_adjacency[off_diagonal_mask], target_adjacency[off_diagonal_mask])  # MSE per edge, excluding self edges
         #loss = torch.norm(input_adjacency - target_adjacency, p=2) / (self._n_nodes ** 2)  # Frobenius norm per edge
