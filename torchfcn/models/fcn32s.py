@@ -106,8 +106,8 @@ class FCN32s(nn.Module):
         print 'Initializing with gain {}'.format(init_gain)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                #m.weight.data.zero_()
-                nn.init.xavier_normal(m.weight.data, gain=init_gain)
+                m.weight.data.zero_()
+                #nn.init.xavier_normal(m.weight.data, gain=init_gain)
                 if m.bias is not None:
                     m.bias.data.zero_()
                     #torch.nn.init.constant(m.bias.data, n_class**(-0.5))  # unit norm vector
