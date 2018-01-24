@@ -40,7 +40,7 @@ class MSEAdjacencyLoss(nn.Module):
         :return loss:
         """
         # Preprocess the input
-        input = F.softmax(input, dim=1)  # (optional) softmax
+        # input = F.softmax(input, dim=1)  # (optional) softmax
         # input = normalize_unit(score, dim=1) # (optional) normalize to unit vectors
 
         # Randomly sample nodes
@@ -306,7 +306,7 @@ class Trainer(object):
                 raise ValueError('Cross entropy loss is nan while training')
 
             loss_mse = self.mse_loss(score, target) / len(data)
-            loss = loss_crossentropy
+            loss = loss_mse
 
             print 'Epoch {}. Iteration {}. Training loss {}'.format(self.epoch, self.iteration, loss.data[0])
 
