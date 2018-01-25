@@ -18,7 +18,7 @@ configurations = {
     # https://github.com/shelhamer/fcn.berkeleyvision.org
     1: dict(
         max_iteration=100000,
-        lr=1.0e-10,  # -10
+        lr=1.0e-5,  # -10
         momentum=0.99,
         weight_decay=0.0005,
         interval_validate=4000,
@@ -34,9 +34,9 @@ def git_hash():
 
 
 def get_log_dir(model_name, config_id, cfg):
-    name = '000b_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
-    name += '_xe_norm-mse'
-    #name += '_mse_lr1e-6_xavier1e-4-norm'
+    name = '002_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
+    #name += '_xe_norm-mse'
+    name += '_mse_lr1e-5_xavier1e-4-norm'
     name += '_VCS-%s' % git_hash()
     name += '_{}'.format(socket.gethostname().split('.')[0])
 
