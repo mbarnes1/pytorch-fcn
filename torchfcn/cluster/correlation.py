@@ -43,11 +43,12 @@ def l1_cost(x):
     return x
 
 
-def l2_cost(x):
+def lp_cost(x, p=2):
     """
     :param x: FloatTensor of vector dot products (i.e. 1 - cosine similarity)
+    :param p: Power to raise x
     :return:  Cost of placing these two samples in different clusters. In [0, 1]
     """
-    num = torch.pow(x, 2)
-    den = num + torch.pow((1.0 - x), 2)
+    num = torch.pow(x, p)
+    den = num + torch.pow((1.0 - x), p)
     return torch.div(num, den)
