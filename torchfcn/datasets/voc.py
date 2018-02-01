@@ -96,6 +96,7 @@ class VOCClassSegBase(data.Dataset):
         return img, lbl
 
 
+# The semantic validation dataset
 class VOC2011ClassSeg(VOCClassSegBase):
 
     def __init__(self, root, split='train', transform=False):
@@ -113,6 +114,23 @@ class VOC2011ClassSeg(VOCClassSegBase):
             self.files['seg11valid'].append({'img': img_file, 'lbl': lbl_file})
 
 
+# The instance validation dataset
+class VOC2011InstSeg(VOCClassSegBase):
+    def __init__(self, root, split='train', transform=False):
+        super(VOC2011InstSeg, self).__init__(
+            root, split=split, transform=transform)
+        pkg_root = osp.join(osp.dirname(osp.realpath(__file__)), '..')
+        imgsets_file = osp.join(
+            pkg_root, 'ext/fcn.berkeleyvision.org',
+            'data/pascal/seg11valid.txt')
+        dataset_dir = osp.join(self.root, 'VOC/VOCdevkit/VOC2012')
+        for did in open(imgsets_file):
+            did = did.strip()
+            img_file = osp.join(dataset_dir, 'JPEGImages/%s.jpg' % did)
+            lbl_file = osp.join(dataset_dir, 'SegmentationObject/%s.png' % did)
+            self.files['seg11valid'].append({'img': img_file, 'lbl': lbl_file})
+
+
 class VOC2012ClassSeg(VOCClassSegBase):
 
     url = 'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar'  # NOQA
@@ -122,6 +140,7 @@ class VOC2012ClassSeg(VOCClassSegBase):
             root, split=split, transform=transform)
 
 
+# The training dataset
 class SBDClassSeg(VOCClassSegBase):
 
     # XXX: It must be renamed to benchmark.tar to be extracted.
@@ -155,6 +174,47 @@ class SBDClassSeg(VOCClassSegBase):
         lbl_file = data_file['lbl']
         mat = scipy.io.loadmat(lbl_file)
         lbl = mat['GTcls'][0]['Segmentation'][0].astype(np.int32)
+        lbl[lbl == 255] = -1
+        if self._transform:
+            return self.transform(img, lbl)
+        else:
+            return img, lbl
+
+
+# The instance training dataset
+class SBDInstSeg(VOCClassSegBase):
+
+    # XXX: It must be renamed to benchmark.tar to be extracted.
+    url = 'http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/semantic_contours/benchmark.tgz'  # NOQA
+
+    def __init__(self, root, split='train', transform=False):
+        self.root = root
+        self.split = split
+        self._transform = transform
+
+        dataset_dir = osp.join(self.root, 'VOC/benchmark_RELEASE/dataset')
+        self.files = collections.defaultdict(list)
+        for split in ['train', 'val']:
+            imgsets_file = osp.join(dataset_dir, '%s.txt' % split)
+            for did in open(imgsets_file):
+                did = did.strip()
+                img_file = osp.join(dataset_dir, 'img/%s.jpg' % did)
+                lbl_file = osp.join(dataset_dir, 'inst/%s.mat' % did)
+                self.files[split].append({
+                    'img': img_file,
+                    'lbl': lbl_file,
+                })
+
+    def __getitem__(self, index):
+        data_file = self.files[self.split][index]
+        # load image
+        img_file = data_file['img']
+        img = PIL.Image.open(img_file)
+        img = np.array(img, dtype=np.uint8)
+        # load label
+        lbl_file = data_file['lbl']
+        mat = scipy.io.loadmat(lbl_file)
+        lbl = mat['GTinst'][0]['Segmentation'][0].astype(np.int32)
         lbl[lbl == 255] = -1
         if self._transform:
             return self.transform(img, lbl)
