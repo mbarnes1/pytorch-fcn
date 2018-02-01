@@ -152,7 +152,7 @@ class Trainer(object):
             'train/acc_cls',
             'train/mean_iu',
             'train/fwavacc',
-            'valid/loss_crossentropy',
+            #'valid/loss_crossentropy',
             'valid/loss_mse',
             'valid/acc',
             'valid/acc_cls',
@@ -179,7 +179,8 @@ class Trainer(object):
 
         n_class = len(self.val_loader.dataset.class_names)
 
-        val_loss_crossentropy = val_loss_mse = 0
+        #val_loss_crossentropy = 0
+        val_loss_mse = 0
         visualizations = []
         label_trues, label_preds = [], []
         for batch_idx, (data, target) in enumerate(self.val_loader):
@@ -205,15 +206,15 @@ class Trainer(object):
                                                        metadata=list(first_image_labels.data.cpu().numpy()),
                                                        global_step=self.iteration)
 
-            loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
+            #loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average)
             loss_mse = self.mse_loss(score, target)
 
-            if np.isnan(float(loss_crossentropy.data[0])):
-                raise ValueError('Cross entropy loss is nan while validating')
+            #if np.isnan(float(loss_crossentropy.data[0])):
+            #    raise ValueError('Cross entropy loss is nan while validating')
             if np.isnan(float(loss_mse.data[0])):
                 raise ValueError('MSE loss is nan while validating')
 
-            val_loss_crossentropy += float(loss_crossentropy.data[0])
+            #val_loss_crossentropy += float(loss_crossentropy.data[0])
             val_loss_mse += float(loss_mse.data[0])
 
             imgs = data.data.cpu()
@@ -236,15 +237,16 @@ class Trainer(object):
         out_file = osp.join(out, 'iter%012d.jpg' % self.iteration)
         scipy.misc.imsave(out_file, fcn.utils.get_tile_image(visualizations))
 
-        val_loss_crossentropy /= len(self.val_loader)
+        #val_loss_crossentropy /= len(self.val_loader)
         val_loss_mse /= len(self.val_loader)
 
         with open(osp.join(self.out, 'log.csv'), 'a') as f:
             elapsed_time = (
                 datetime.datetime.now(pytz.timezone('Asia/Tokyo')) -
                 self.timestamp_start).total_seconds()
-            log = [self.epoch, self.iteration] + [''] * 5 + \
-                  [val_loss_crossentropy] + [val_loss_mse] + list(metrics) + [elapsed_time]
+            #log = [self.epoch, self.iteration] + [''] * 5 + \
+            #      [val_loss_crossentropy] + [val_loss_mse] + list(metrics) + [elapsed_time]
+            log = [self.epoch, self.iteration] + [''] * 5 + [val_loss_mse] + list(metrics) + [elapsed_time]
             log = map(str, log)
             f.write(','.join(log) + '\n')
 
@@ -270,7 +272,7 @@ class Trainer(object):
 
         # Write outputs to Tensorboard
         if self._tensorboard_writer is not None:
-            self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
+            #self._tensorboard_writer.add_scalar('loss_crossentropy/validation', val_loss_crossentropy, self.iteration)
             self._tensorboard_writer.add_scalar('loss_mse/validation', val_loss_mse, self.iteration)
             self._tensorboard_writer.add_scalar('acc/validation', val_acc, self.iteration)
             self._tensorboard_writer.add_scalar('mean_iu/validation', mean_iu, self.iteration)
@@ -301,9 +303,9 @@ class Trainer(object):
                 print score
                 raise ValueError('Scores are NaN')
 
-            loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
-            if np.isnan(float(loss_crossentropy.data[0])):
-                raise ValueError('Cross entropy loss is nan while training')
+            #loss_crossentropy = cross_entropy2d(score, target, size_average=self.size_average) / len(data)
+            #if np.isnan(float(loss_crossentropy.data[0])):
+            #    raise ValueError('Cross entropy loss is nan while training')
 
             loss_mse = self.mse_loss(score, target) / len(data)
             loss = loss_mse
@@ -329,15 +331,16 @@ class Trainer(object):
                 elapsed_time = (
                     datetime.datetime.now(pytz.timezone('Asia/Tokyo')) -
                     self.timestamp_start).total_seconds()
-                log = [self.epoch, self.iteration] + [loss_crossentropy.data[0]] + \
-                       metrics.tolist() + [''] * 5 + [elapsed_time]  # [loss_mse.data[0]] + \ (in above line)
+                #log = [self.epoch, self.iteration] + [loss_crossentropy.data[0]] + \
+                #      metrics.tolist() + [''] * 5 + [elapsed_time]  # [loss_mse.data[0]] + \ (in above line)
+                log = [self.epoch, self.iteration] + metrics.tolist() + [''] * 5 + [elapsed_time]  # [loss_mse.data[0]] + \ (in above line)
                 log = map(str, log)
                 f.write(','.join(log) + '\n')
 
             # Write results to Tensorboard
             if self._tensorboard_writer is not None:
                 if self.iteration % self._interval_train_loss == 0:
-                    self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
+                    #self._tensorboard_writer.add_scalar('loss_crossentropy/train', loss_crossentropy.data[0], self.iteration)
                     self._tensorboard_writer.add_scalar('loss_mse/train', loss_mse.data[0], self.iteration)
 
                 if self.iteration % self.interval_validate == 0:
