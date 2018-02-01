@@ -84,6 +84,9 @@ def main():
     parser.add_argument('-g', '--gpu', type=int, required=True)
     parser.add_argument('-c', '--config', type=int, default=1,
                         choices=configurations.keys())
+    parser.add_argument('--instance',
+                        action='store_true',
+                        help='Use instance labels, else use class labels.')
     parser.add_argument('--resume', help='Checkpoint path')
     args = parser.parse_args()
 
@@ -104,12 +107,19 @@ def main():
 
     root = osp.expanduser('~/data/datasets')
     kwargs = {'num_workers': 4, 'pin_memory': True} if cuda else {}
+    if args.instance:
+        print 'Beginning instance segmentation.'
+        train_dataset = torchfcn.datasets.SBDInstSeg
+        val_dataset = torchfcn.datasets.VOC2011InstSeg
+    else:
+        print 'Beginning class segmentation.'
+        train_dataset = torchfcn.datasets.SBDClassSeg
+        val_dataset = torchfcn.datasets.VOC2011ClassSeg
     train_loader = torch.utils.data.DataLoader(
-        torchfcn.datasets.SBDClassSeg(root, split='train', transform=True),
+        train_dataset(root, split='train', transform=True),
         batch_size=1, shuffle=True, **kwargs)
     val_loader = torch.utils.data.DataLoader(
-        torchfcn.datasets.VOC2011ClassSeg(
-            root, split='seg11valid', transform=True),
+        val_dataset(root, split='seg11valid', transform=True),
         batch_size=1, shuffle=False, **kwargs)
 
     # 2. model
