@@ -34,9 +34,9 @@ def git_hash():
 
 
 def get_log_dir(model_name, config_id, cfg):
-    name = '002_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
+    name = '003_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
     #name += '_xe_norm-mse'
-    name += '_mse_lr1e-5_xavier1e-4-norm'
+    name += '_instance_mse_lr1e-5_xavier1e-4-norm'
     name += '_VCS-%s' % git_hash()
     name += '_{}'.format(socket.gethostname().split('.')[0])
 
