@@ -37,9 +37,10 @@ def kwik_cluster(V, cost_function):
 
 def l1_cost(x):
     """
-    :param x:  FloatTensor of vector dot products (i.e. 1 - cosine similarity)
+    :param x:  FloatTensor of vector dot products (i.e. 1 - cosine similarity), in [-1, 1]
     :return:   Cost of placing these two samples in different clusters. In [0, 1]
     """
+    x = torch.max(x, x.new([0.0]))
     return x
 
 
@@ -49,6 +50,7 @@ def lp_cost(x, p=2):
     :param p: Power to raise x
     :return:  Cost of placing these two samples in different clusters. In [0, 1]
     """
+    x = torch.max(x, x.new([0.0]))
     num = torch.pow(x, p)
     den = num + torch.pow((1.0 - x), p)
     return torch.div(num, den)
