@@ -181,7 +181,7 @@ class Trainer(object):
 
         #val_loss_crossentropy = 0
         val_loss_mse = 0
-        visualizations = []
+        #visualizations = []
         label_trues, label_preds = [], []
         for batch_idx, (data, target) in enumerate(self.val_loader):
             if self.cuda:
@@ -224,18 +224,18 @@ class Trainer(object):
                 img, lt = self.val_loader.dataset.untransform(img, lt)
                 label_trues.append(lt)
                 label_preds.append(lp)
-                if len(visualizations) < 9:
-                    viz = fcn.utils.visualize_segmentation(
-                        lbl_pred=lp, lbl_true=lt, img=img, n_class=n_class)
-                    visualizations.append(viz)
+                # if len(visualizations) < 9:
+                #     viz = fcn.utils.visualize_segmentation(
+                #         lbl_pred=lp, lbl_true=lt, img=img, n_class=n_class)
+                #     visualizations.append(viz)
         metrics = torchfcn.utils.label_accuracy_score(
             label_trues, label_preds, n_class)
 
-        out = osp.join(self.out, 'visualization_viz')
-        if not osp.exists(out):
-            os.makedirs(out)
-        out_file = osp.join(out, 'iter%012d.jpg' % self.iteration)
-        scipy.misc.imsave(out_file, fcn.utils.get_tile_image(visualizations))
+        # out = osp.join(self.out, 'visualization_viz')
+        # if not osp.exists(out):
+        #     os.makedirs(out)
+        # out_file = osp.join(out, 'iter%012d.jpg' % self.iteration)
+        # scipy.misc.imsave(out_file, fcn.utils.get_tile_image(visualizations))
 
         #val_loss_crossentropy /= len(self.val_loader)
         val_loss_mse /= len(self.val_loader)
