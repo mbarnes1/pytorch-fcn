@@ -165,7 +165,8 @@ def main():
         max_iter=cfg['max_iteration'],
         interval_validate=cfg.get('interval_validate', len(train_loader)),
         tensorboard_writer=tensorboard_writer,
-        interval_train_loss=100
+        interval_train_loss=100,
+        n_class=cfg['num_classes']
     )
     trainer.epoch = start_epoch
     trainer.iteration = start_iteration

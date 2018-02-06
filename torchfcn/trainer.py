@@ -109,7 +109,8 @@ class Trainer(object):
 
     def __init__(self, cuda, model, optimizer,
                  train_loader, val_loader, out, max_iter,
-                 size_average=False, interval_validate=None, tensorboard_writer=None, interval_train_loss=10):
+                 size_average=False, interval_validate=None, tensorboard_writer=None, interval_train_loss=10,
+                 n_class=21):
         """
         :param cuda:
         :param model:
@@ -122,6 +123,7 @@ class Trainer(object):
         :param interval_validate: Validate, print and write to tensorboard every this many iterations.
         :param tensorboard_writer: TensorboardX SummaryWriter object
         :param interval_train_loss: Print train loss to Tensorboard every this many iterations.
+        :param n_class: Embedding dimension, or number of semantic classes
         """
         self.cuda = cuda
         self.model = model
@@ -137,6 +139,7 @@ class Trainer(object):
             self.interval_validate = interval_validate
         self._tensorboard_writer = tensorboard_writer
         self._interval_train_loss = interval_train_loss
+        self._n_class = n_class
 
         self.timestamp_start = \
             datetime.datetime.now(pytz.timezone('Asia/Tokyo'))
@@ -177,7 +180,7 @@ class Trainer(object):
         training = self.model.training
         self.model.eval()
 
-        n_class = len(self.val_loader.dataset.class_names)
+        n_class = self._n_class  # len(self.val_loader.dataset.class_names)
 
         #val_loss_crossentropy = 0
         val_loss_mse = 0
@@ -280,7 +283,7 @@ class Trainer(object):
     def train_epoch(self):
         self.model.train()
 
-        n_class = len(self.train_loader.dataset.class_names)
+        n_class = self._n_class  # len(self.train_loader.dataset.class_names)
 
         for batch_idx, (data, target) in enumerate(self.train_loader):
             iteration = batch_idx + self.epoch * len(self.train_loader)
