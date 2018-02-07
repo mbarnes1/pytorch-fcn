@@ -34,7 +34,7 @@ configurations = {
 def get_log_dir(model_name, config_id, cfg):
     name = '004_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
     #name += '_xe_norm-mse'
-    name += '_instance_mse_FCN8_lr1e-7_norm_D21'
+    name += '_instance_mse_FCN8_lr1e-7_xavier1e-4_norm_D21'
     name += '_VCS-%s' % git_hash()
     name += '_{}'.format(socket.gethostname().split('.')[0])
 
