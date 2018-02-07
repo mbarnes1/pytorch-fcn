@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import datetime
+from datetime import datetime
 import os
 import os.path as osp
 import socket
@@ -25,7 +25,7 @@ configurations = {
         interval_validate=4000,
         fcn16s_pretrained_model=torchfcn.models.FCN16s.download(),
         init_gain=1.0e-4,  # used for initiailizing network weights
-        num_classes=20  # embedding dimension. must be 21 for semantic segmentation,
+        num_classes=21  # embedding dimension. must be 21 for semantic segmentation,
     )
 }
 
@@ -33,7 +33,7 @@ configurations = {
 def get_log_dir(model_name, config_id, cfg):
     name = '004_{}'.format(datetime.now().strftime('%b%d-%H:%M:%S'))
     #name += '_xe_norm-mse'
-    name += '_instance_mse_FCN8_lr1e-5_xavier1e-4-norm_D20'
+    name += '_instance_mse_FCN8_lr1e-5_xavier1e-4-norm_D21'
     name += '_VCS-%s' % git_hash()
     name += '_{}'.format(socket.gethostname().split('.')[0])
 
