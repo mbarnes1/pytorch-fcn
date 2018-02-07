@@ -30,12 +30,13 @@ class RandomEdgeSampler(nn.Module):
         super(RandomEdgeSampler, self).__init__()
         self._n_nodes = n_nodes
 
+    # TODO: How are unit tests working with byte tensors, make sure bmm is only done with floats
     def forward(self, input, target):
         """
         Compute an unbiased estimate of the MSE by randomly selecting nodes from the graph adjacency matrices.
         :param input: N x C x H x W Variable. Predicted eigenvectors, i.e. the embedding for every pixel.
         :param target: N x H x W Long Variable. Instance labels for every channel
-        :return input_adjacency: N x n_nodes x n_nodes Variable. (same type as input)
+        :return input_adjacency: N x n_nodes x n_nodes Float Variable.
         :return target_adjacency: N x n_nodes x n_nodes Byte Variable.
         """
         # Randomly sample nodes
@@ -51,7 +52,7 @@ class RandomEdgeSampler(nn.Module):
 
         # Compute adjacency matrices
         input_subsample = torch.gather(input.view(n, c, -1), 2,
-                                       random_indices.unsqueeze(dim=1).expand(-1, c, -1))  # N x C x n_nodes
+                                       random_indices.unsqueeze(dim=1).expand(-1, c, -1)).float()  # N x C x n_nodes
         target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
 
         input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
@@ -81,10 +82,8 @@ class ConfusionMatrix(nn.Module):
         input_adjacency, target_adjacency = self._sampler(input, target)
         input_adjacency, target_adjacency = input_adjacency.data, target_adjacency.data
 
-        # Assert binary adjacency matrices
-        assert isinstance(input_adjacency, torch.ByteTensor) or isinstance(input_adjacency, torch.cuda.ByteTensor)
-        assert isinstance(target_adjacency, torch.ByteTensor) or isinstance(target_adjacency, torch.cuda.ByteTensor)
-
+        input_adjacency = input_adjacency.byte()
+        
         # Compute metrics
         tp = float(torch.sum(input_adjacency[target_adjacency]))
         fp = float(torch.sum(input_adjacency[~target_adjacency]))
