@@ -19,7 +19,7 @@ class FCN8s(nn.Module):
             md5='dbd9bbb3829a3184913bccc74373afbb',
         )
 
-    def __init__(self, n_class=21):
+    def __init__(self, n_class=21, init_gain=1e-8):
         super(FCN8s, self).__init__()
         # conv1
         self.conv1_1 = nn.Conv2d(3, 64, 3, padding=100)
@@ -83,12 +83,13 @@ class FCN8s(nn.Module):
         self.upscore_pool4 = nn.ConvTranspose2d(
             n_class, n_class, 4, stride=2, bias=False)
 
-        self._initialize_weights()
+        self._initialize_weights(init_gain, n_class)
 
-    def _initialize_weights(self):
+    def _initialize_weights(self, init_gain, n_class):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 m.weight.data.zero_()
+                #nn.init.xavier_normal(m.weight.data, gain=init_gain)
                 if m.bias is not None:
                     m.bias.data.zero_()
             if isinstance(m, nn.ConvTranspose2d):
