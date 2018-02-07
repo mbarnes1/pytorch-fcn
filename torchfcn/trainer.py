@@ -14,9 +14,83 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchfcn
 from torchfcn.utils import normalize_unit
-
+from torch import Size
 
 MAX_TENSORBOARD_EMBEDDINGS = 10000  # write at most this many pixels to tensorboard embedding
+
+
+class RandomEdgeSampler(nn.Module):
+    """
+    Randomly sample nodes in graph and compute the edge adjacency matrix
+    """
+    def __init__(self, n_nodes):
+        """
+        :param n_nodes: Number of random nodes to sample from the graph.
+        """
+        super(RandomEdgeSampler, self).__init__()
+        self._n_nodes = n_nodes
+
+    def forward(self, input, target):
+        """
+        Compute an unbiased estimate of the MSE by randomly selecting nodes from the graph adjacency matrices.
+        :param input: N x C x H x W Variable. Predicted eigenvectors, i.e. the embedding for every pixel.
+        :param target: N x H x W Long Variable. Instance labels for every channel
+        :return input_adjacency: N x n_nodes x n_nodes Variable. (same type as input)
+        :return target_adjacency: N x n_nodes x n_nodes Byte Variable.
+        """
+        # Randomly sample nodes
+        n, c, h, w = input.size()
+        total_nodes_per_image = h * w
+        if total_nodes_per_image >= self._n_nodes:
+            n_nodes_this_iter = self._n_nodes
+        else:
+            n_nodes_this_iter = total_nodes_per_image
+        random_indices = Variable(
+            target.data.new(random.sample(xrange(total_nodes_per_image), n_nodes_this_iter * n)).view(n,
+                                                                                                      n_nodes_this_iter))  # n x n_nodes
+
+        # Compute adjacency matrices
+        input_subsample = torch.gather(input.view(n, c, -1), 2,
+                                       random_indices.unsqueeze(dim=1).expand(-1, c, -1))  # N x C x n_nodes
+        target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
+
+        input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
+        target_adjacency = labels_to_adjacency(target_subsample.view(n, -1))
+        return input_adjacency, target_adjacency
+
+
+class ConfusionMatrix(nn.Module):
+    """
+    An unbiased estimator of the pairwise true positives, true negatives, false positives and false negatives.
+    """
+    def __init__(self, n_nodes):
+        super(ConfusionMatrix, self).__init__()
+        self._sampler = RandomEdgeSampler(n_nodes)
+
+    def forward(self, input, target):
+        """
+        Compute an unbiased estimate of the MSE by randomly selecting nodes from the graph adjacency matrices.
+        :param input: N x C x H x W Byte Variable. Hot one encoding.
+        :param target: N x H x W Long Variable. Instance labels for every channel
+        :return tp: True positives, float
+        :return fp: False positives, float
+        :return tn: True negatives, float
+        :return fn: False negatives, float
+        """
+        # Randomly sample nodes
+        input_adjacency, target_adjacency = self._sampler(input, target)
+        input_adjacency, target_adjacency = input_adjacency.data, target_adjacency.data
+
+        # Assert binary adjacency matrices
+        assert isinstance(input_adjacency, torch.ByteTensor) or isinstance(input_adjacency, torch.cuda.ByteTensor)
+        assert isinstance(target_adjacency, torch.ByteTensor) or isinstance(target_adjacency, torch.cuda.ByteTensor)
+
+        # Compute metrics
+        tp = float(torch.sum(input_adjacency[target_adjacency]))
+        fp = float(torch.sum(input_adjacency[~target_adjacency]))
+        tn = float(torch.sum(~input_adjacency[~target_adjacency]))
+        fn = float(torch.sum(~input_adjacency[target_adjacency]))
+        return tp, fp, tn, fn
 
 
 class MSEAdjacencyLoss(nn.Module):
@@ -29,7 +103,7 @@ class MSEAdjacencyLoss(nn.Module):
         :param n_nodes: Number of random nodes to sample from the graph.
         """
         super(MSEAdjacencyLoss, self).__init__()
-        self._n_nodes = n_nodes
+        self._sampler = RandomEdgeSampler(n_nodes)
         self._mse = torch.nn.MSELoss()
 
     def forward(self, input, target):
@@ -37,27 +111,15 @@ class MSEAdjacencyLoss(nn.Module):
         Compute an unbiased estimate of the MSE by randomly selecting nodes from the graph adjacency matrices.
         :param input: N x C x H x W Float Variable. Predicted eigenvectors, i.e. the embedding for every pixel.
         :param target: N x H x W Long Variable. Instance labels for every channel
-        :return loss:
+        :return loss: Float Variable
         """
         # Preprocess the input
         # input = F.softmax(input, dim=1)  # (optional) softmax
         input = normalize_unit(input, dim=1)  # (optional) normalize to unit vectors
 
         # Randomly sample nodes
-        n, c, h, w = input.size()
-        total_nodes_per_image = h * w
-        if total_nodes_per_image >= self._n_nodes:
-            n_nodes_this_iter = self._n_nodes
-        else:
-            n_nodes_this_iter = total_nodes_per_image
-        random_indices = Variable(target.data.new(random.sample(xrange(total_nodes_per_image), n_nodes_this_iter * n)).view(n, n_nodes_this_iter))  # n x n_nodes
-
-        # Compute loss
-        input_subsample = torch.gather(input.view(n, c, -1), 2, random_indices.unsqueeze(dim=1).expand(-1, c, -1))  # N x C x n_nodes
-        target_subsample = torch.gather(target.view(n, -1), 1, random_indices)  # N x n_nodes
-
-        input_adjacency = torch.bmm(input_subsample.transpose(1, 2), input_subsample)  # N x n_nodes x n_nodes
-        target_adjacency = labels_to_adjacency(target_subsample.view(n, -1))
+        input_adjacency, target_adjacency = self._sampler(input, target)
+        target_adjacency = target_adjacency.float()
 
         #off_diagonal_mask = ~torch.eye(self._n_nodes).byte().unsqueeze(dim=0).expand(n, -1, -1)
         #loss = self._mse(input_adjacency[off_diagonal_mask], target_adjacency[off_diagonal_mask])  # MSE per edge, excluding self edges
@@ -71,11 +133,11 @@ class MSEAdjacencyLoss(nn.Module):
 def labels_to_adjacency(labels):
     """
     :param labels: N x M LongTensor Variable, where N is the batch size and M is the number of nodes.
-    :return adjacency: N x M x M FloatTensor Variable.
+    :return adjacency: N x M x M ByteTensor Variable.
     """
     m = labels.size(1)
     labels = labels.unsqueeze(dim=1).expand(-1, m, -1)  # N x M x M matrix
-    adjacency = (labels == labels.transpose(1, 2)).float()
+    adjacency = (labels == labels.transpose(1, 2))
     return adjacency
 
 
