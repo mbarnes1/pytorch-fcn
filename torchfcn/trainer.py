@@ -109,7 +109,7 @@ class MSEAdjacencyLoss(nn.Module):
         self._normalize = normalize
         self._softmax = softmax
 
-    def forward(self, input, target, normalize=True, softmax=False):
+    def forward(self, input, target):
         """
         Compute an unbiased estimate of the MSE by randomly selecting nodes from the graph adjacency matrices.
         :param input: N x C x H x W Float Variable. Predicted eigenvectors, i.e. the embedding for every pixel.
