@@ -83,7 +83,7 @@ class ConfusionMatrix(nn.Module):
         input_adjacency, target_adjacency = input_adjacency.data, target_adjacency.data
 
         input_adjacency = input_adjacency.byte()
-        
+
         # Compute metrics
         tp = float(torch.sum(input_adjacency[target_adjacency]))
         fp = float(torch.sum(input_adjacency[~target_adjacency]))
@@ -97,15 +97,19 @@ class MSEAdjacencyLoss(nn.Module):
     An unbiased estimator of the mean squared error between the true and predicted graph adjacency matrices.
     Loss is computed per edge.
     """
-    def __init__(self, n_nodes):
+    def __init__(self, n_nodes, normalize=True, softmax=False):
         """
         :param n_nodes: Number of random nodes to sample from the graph.
+        :param softmax: Perform softmax on input (prior to normalization)
+        :param normalize: Normalize eigenvector rows to have norm 1
         """
         super(MSEAdjacencyLoss, self).__init__()
         self._sampler = RandomEdgeSampler(n_nodes)
         self._mse = torch.nn.MSELoss()
+        self._normalize = normalize
+        self._softmax = softmax
 
-    def forward(self, input, target):
+    def forward(self, input, target, normalize=True, softmax=False):
         """
         Compute an unbiased estimate of the MSE by randomly selecting nodes from the graph adjacency matrices.
         :param input: N x C x H x W Float Variable. Predicted eigenvectors, i.e. the embedding for every pixel.
@@ -113,8 +117,10 @@ class MSEAdjacencyLoss(nn.Module):
         :return loss: Float Variable
         """
         # Preprocess the input
-        # input = F.softmax(input, dim=1)  # (optional) softmax
-        input = normalize_unit(input, dim=1)  # (optional) normalize to unit vectors
+        if self._softmax:
+            input = F.softmax(input, dim=1)  # (optional) softmax
+        if self._normalize:
+            input = normalize_unit(input, dim=1)  # (optional) normalize to unit vectors
 
         # Randomly sample nodes
         input_adjacency, target_adjacency = self._sampler(input, target)
