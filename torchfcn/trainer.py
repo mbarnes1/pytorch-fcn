@@ -1,12 +1,10 @@
 import datetime
-import fcn
 import math
 import numpy as np
 import os
 import os.path as osp
 import pytz
 import random
-import scipy.misc
 import shutil
 import torch
 from torch.autograd import Variable
@@ -14,7 +12,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchfcn
 from torchfcn.utils import normalize_unit
-from torch import Size
 
 MAX_TENSORBOARD_EMBEDDINGS = 10000  # write at most this many pixels to tensorboard embedding
 

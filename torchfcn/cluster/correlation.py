@@ -4,6 +4,30 @@ Correlation Clustering methods
 import numpy as np
 import random
 import torch
+from torch.autograd import Variable
+from torchfcn.trainer import MSEAdjacencyLoss
+
+
+# TODO: Refactor this to return kwik_cluster with the lowest cost (not MSE).
+def kwik_cluster_best(V, cost_function, n_trials=5, n_samples=10000):
+    """
+    Run KwikCluster multiple times and choose one with resulting lowest MSE
+    :param V:               N x D torch.FloatTensor (or cuda.FloatTensor) where N is number of pixels and D is the embedding dimension.
+    :param cost_function:   Function that maps vector dot product (cosine similarity) to a cost for creating graph.
+    :param n_trials:        Number of times to run KwikCluster
+    :return labels:         N torch.LongTensor with labels for each pixel.
+    """
+    best_labels = None
+    best_loss = float('Inf')
+
+    for i in range(0, n_trials):
+        labels = kwik_cluster(V, cost_function)
+        mse = MSEAdjacencyLoss(n_samples)
+        loss = mse(Variable(V.permute(1, 0).unsqueeze(0).unsqueeze(3)), Variable(labels.view(1, -1, 1)))  # N x C x H x W Float Variable, N x H x W Long Variable
+        if loss.data[0] < best_loss:
+            best_loss = loss.data[0]
+            best_labels = labels
+    return best_labels
 
 
 def kwik_cluster(V, cost_function):
@@ -11,7 +35,7 @@ def kwik_cluster(V, cost_function):
     KwikCluster (Ailon2008) based on cosine similarity
     :param V:               N x D torch.FloatTensor (or cuda.FloatTensor) where N is number of pixels and D is the embedding dimension.
     :param cost_function:   Function that maps vector dot product (cosine similarity) to a cost for creating graph.
-    :return labels:         N numpy array of pixel labels.
+    :return labels:         N torch.LongTensor with labels for each pixel.
     """
     n, d = V.size()
     labels = V.new(n).long().fill_(-1)
